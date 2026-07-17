@@ -1,0 +1,6 @@
+node_modules
+dist
+.vercel
+app/server/data.json
+*.local
+.DS_Store
