@@ -167,7 +167,7 @@ export default function AdminLayout() {
       {moreOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-black/60 fadein" />
-          <div className="relative bg-surface border-t border-hairline rounded-t-2xl p-4 pb-8 rise" onClick={(e) => e.stopPropagation()}>
+          <div className="relative bg-surface border-t border-hairline rounded-t-2xl p-4 pb-8 rise max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <Wordmark size={26} />
               <button onClick={() => setMoreOpen(false)} className="grid h-8 w-8 place-items-center rounded-lg card">

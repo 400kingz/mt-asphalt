@@ -131,7 +131,7 @@ export default function Overview() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Revenue chart */}
-        <div className="lg:col-span-2 card p-5">
+        <div className="lg:col-span-2 card p-5 min-w-0">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="eyebrow mb-1">Trailing 12 months</div>
@@ -151,7 +151,7 @@ export default function Overview() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="#242428" vertical={false} />
-                <XAxis dataKey="month" tick={{ fill: "#8a97a0", fontSize: 10, fontFamily: "Space Mono" }} axisLine={false} tickLine={false} interval={0} />
+                <XAxis dataKey="month" tick={{ fill: "#8a97a0", fontSize: 10, fontFamily: "Space Mono" }} axisLine={false} tickLine={false} minTickGap={18} />
                 <YAxis tick={{ fill: "#8a97a0", fontSize: 10, fontFamily: "Space Mono" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v / 1000}k`} width={38} />
                 <Tooltip
                   contentStyle={{ background: "#1f1f23", border: "1px solid #34343a", borderRadius: 10 }}

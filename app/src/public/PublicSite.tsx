@@ -129,6 +129,8 @@ export default function PublicSite() {
       </main>
 
       <Footer settings={settings} nav={nav} />
+      {/* clearance so the sticky call bar never covers footer content on mobile */}
+      <div className="h-20 sm:hidden" aria-hidden />
       <StickyCallBar settings={settings} />
     </div>
   );
@@ -154,7 +156,7 @@ function Hero({ settings }: { settings: ReturnType<typeof useStore>["db"]["setti
             <span className="text-steel-dim">/</span>
             <span>Orange County, CA</span>
           </div>
-          <h1 className="display text-cream text-[13vw] leading-[0.9] sm:text-6xl md:text-7xl">
+          <h1 className="display text-cream text-[clamp(38px,11.5vw,58px)] leading-[0.9] sm:text-6xl md:text-7xl">
             Paving done <span className="text-highway">right</span>,
             <br /> the first time.
           </h1>
@@ -391,10 +393,10 @@ function EstimateWidget() {
         <div className="card asphalt-grain p-8 relative overflow-hidden">
           <div className="hazard absolute top-0 left-0 right-0 h-2" />
           <div className="data text-[11px] tracking-[0.2em] text-steel">ESTIMATED RANGE</div>
-          <div className="mt-3 flex items-end gap-2">
-            <span className="display text-highway text-5xl md:text-6xl">{money(low)}</span>
-            <span className="text-steel data pb-2">—</span>
-            <span className="display text-cream text-4xl md:text-5xl">{money(high)}</span>
+          <div className="mt-3 flex items-end gap-2 flex-wrap">
+            <span className="display text-highway text-4xl sm:text-5xl md:text-6xl">{money(low)}</span>
+            <span className="text-steel data pb-1.5">—</span>
+            <span className="display text-cream text-3xl sm:text-4xl md:text-5xl">{money(high)}</span>
           </div>
           <div className="mt-2 data text-xs text-steel">
             {r.label} · {sqft.toLocaleString()} {r.unit}
@@ -657,6 +659,15 @@ function ContactForm({ settings }: { settings: ReturnType<typeof useStore>["db"]
       createdAt: new Date().toISOString(),
     };
     addLead(lead);
+    // Persist to the serverless lead inbox so it reaches Michael's dashboard
+    // from any device (and triggers the email notification when configured).
+    fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(lead),
+    }).catch(() => {
+      /* offline / local dev — the local copy above still captured it */
+    });
     setSent(true);
   };
 
@@ -716,7 +727,7 @@ function ContactForm({ settings }: { settings: ReturnType<typeof useStore>["db"]
                   <input className="input" required value={form.name} onChange={set("name")} placeholder="Jane Homeowner" />
                 </Field>
                 <Field label="Phone" required>
-                  <input className="input" required value={form.phone} onChange={set("phone")} placeholder="(714) 555-0123" />
+                  <input className="input" type="tel" inputMode="tel" autoComplete="tel" required value={form.phone} onChange={set("phone")} placeholder="(714) 555-0123" />
                 </Field>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">

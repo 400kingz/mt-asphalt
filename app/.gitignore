@@ -3,3 +3,6 @@ dist
 server/data.json
 *.local
 .DS_Store
+
+.vercel
+.env*

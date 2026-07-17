@@ -63,14 +63,14 @@ export default function Finance() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Profit bars */}
-        <div className="lg:col-span-2 card p-5">
+        <div className="lg:col-span-2 card p-5 min-w-0">
           <div className="eyebrow mb-1">Monthly net profit</div>
           <h3 className="display text-lg text-cream mb-4">Revenue minus expenses</h3>
           <div className="h-64 -ml-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={profitSeries} margin={{ top: 6, right: 6, bottom: 0, left: 0 }}>
                 <CartesianGrid stroke="#242428" vertical={false} />
-                <XAxis dataKey="month" tick={{ fill: "#8a97a0", fontSize: 10, fontFamily: "Space Mono" }} axisLine={false} tickLine={false} interval={0} />
+                <XAxis dataKey="month" tick={{ fill: "#8a97a0", fontSize: 10, fontFamily: "Space Mono" }} axisLine={false} tickLine={false} minTickGap={18} />
                 <YAxis tick={{ fill: "#8a97a0", fontSize: 10, fontFamily: "Space Mono" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v / 1000}k`} width={38} />
                 <Tooltip contentStyle={{ background: "#1f1f23", border: "1px solid #34343a", borderRadius: 10 }} labelStyle={{ color: "#f6f4ef", fontFamily: "Space Mono" }} formatter={(v: number) => [money(v), "Profit"]} cursor={{ fill: "rgba(242,183,5,0.06)" }} />
                 <Bar dataKey="profit" radius={[4, 4, 0, 0]}>
@@ -84,7 +84,7 @@ export default function Finance() {
         </div>
 
         {/* Revenue by service */}
-        <div className="card p-5">
+        <div className="card p-5 min-w-0">
           <div className="eyebrow mb-1">Revenue mix</div>
           <h3 className="display text-lg text-cream mb-2">By service</h3>
           <div className="h-44">

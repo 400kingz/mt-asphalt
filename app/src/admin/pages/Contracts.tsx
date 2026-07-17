@@ -95,8 +95,8 @@ function ContractPreview({ contract, onClose }: { contract: Contract; onClose: (
         </div>
         <div className="print-doc bg-white text-[#17171a] rounded-lg overflow-hidden shadow-2xl">
           <div style={{ height: 8, background: "repeating-linear-gradient(45deg,#f2b705 0,#f2b705 12px,#0f0f11 12px,#0f0f11 24px)" }} />
-          <div className="p-7 text-sm">
-            <div className="flex items-start justify-between">
+          <div className="p-5 sm:p-7 text-sm">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3">
                 <LogoMark size={44} />
                 <div>

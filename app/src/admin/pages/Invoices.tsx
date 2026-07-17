@@ -138,8 +138,8 @@ function InvoicePreview({ invoice, onClose }: { invoice: Invoice; onClose: () =>
         {/* document */}
         <div className="print-doc bg-white text-[#17171a] rounded-lg overflow-hidden shadow-2xl">
           <div style={{ height: 8, background: "repeating-linear-gradient(45deg,#f2b705 0,#f2b705 12px,#0f0f11 12px,#0f0f11 24px)" }} />
-          <div className="p-7">
-            <div className="flex items-start justify-between">
+          <div className="p-5 sm:p-7">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3">
                 <LogoMark size={48} />
                 <div>
@@ -179,26 +179,28 @@ function InvoicePreview({ invoice, onClose }: { invoice: Invoice; onClose: () =>
               <div className="mt-4 data text-[11px] text-neutral-500">Job site: {invoice.jobSiteAddress}</div>
             )}
 
-            <table className="w-full mt-5 text-sm">
-              <thead>
-                <tr className="text-left data text-[10px] uppercase tracking-wider text-neutral-400 border-b-2" style={{ borderColor: "#0f0f11" }}>
-                  <th className="py-2">Description</th>
-                  <th className="py-2 text-right">Qty</th>
-                  <th className="py-2 text-right">Rate</th>
-                  <th className="py-2 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.lineItems.map((li) => (
-                  <tr key={li.id} className="border-b border-neutral-200">
-                    <td className="py-2.5 pr-2">{li.description}</td>
-                    <td className="py-2.5 text-right data text-neutral-600">{li.qty.toLocaleString()} {li.unit}</td>
-                    <td className="py-2.5 text-right data text-neutral-600">{money(li.rate, true)}</td>
-                    <td className="py-2.5 text-right data font-bold">{money(li.qty * li.rate)}</td>
+            <div className="overflow-x-auto mt-5">
+              <table className="w-full text-sm min-w-[420px]">
+                <thead>
+                  <tr className="text-left data text-[10px] uppercase tracking-wider text-neutral-400 border-b-2" style={{ borderColor: "#0f0f11" }}>
+                    <th className="py-2">Description</th>
+                    <th className="py-2 text-right">Qty</th>
+                    <th className="py-2 text-right">Rate</th>
+                    <th className="py-2 text-right">Amount</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {invoice.lineItems.map((li) => (
+                    <tr key={li.id} className="border-b border-neutral-200">
+                      <td className="py-2.5 pr-2">{li.description}</td>
+                      <td className="py-2.5 text-right data text-neutral-600">{li.qty.toLocaleString()} {li.unit}</td>
+                      <td className="py-2.5 text-right data text-neutral-600">{money(li.rate, true)}</td>
+                      <td className="py-2.5 text-right data font-bold">{money(li.qty * li.rate)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             <div className="flex justify-end mt-4">
               <div className="w-56 space-y-1.5 text-sm">
@@ -244,7 +246,10 @@ function Row({ k, v }: { k: string; v: string }) {
 /* ---------- Invoice builder ---------- */
 function InvoiceBuilder({ onClose, onCreated }: { onClose: () => void; onCreated: (inv: Invoice) => void }) {
   const { db, addInvoice } = useStore();
-  const nextNum = `INV-2026-${String(37 + db.invoices.filter((i) => i.number.startsWith("INV-2026")).length - db.invoices.length + db.invoices.length + 1).padStart(3, "0")}`;
+  // Next number = highest existing sequence + 1 (robust to any history)
+  const nextSeq =
+    Math.max(0, ...db.invoices.map((i) => parseInt(i.number.split("-").pop() ?? "0", 10) || 0)) + 1;
+  const nextNum = `INV-2026-${String(nextSeq).padStart(3, "0")}`;
   const [customerName, setCustomerName] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -260,7 +265,7 @@ function InvoiceBuilder({ onClose, onCreated }: { onClose: () => void; onCreated
   const create = () => {
     const inv: Invoice = {
       id: uid("inv"),
-      number: `INV-2026-${String(38 + db.invoices.length).padStart(3, "0")}`,
+      number: nextNum,
       customerName: customerName || "New customer",
       customerAddress,
       customerEmail,

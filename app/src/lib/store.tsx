@@ -106,6 +106,44 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Pull the serverless lead inbox (/api/leads on Vercel) and merge any leads
+  // this browser hasn't seen — website estimate requests reach the dashboard
+  // from any device this way.
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/leads", { headers: { accept: "application/json" } });
+        if (!res.ok || !res.headers.get("content-type")?.includes("json")) return;
+        const remote = (await res.json()) as Partial<Lead>[];
+        if (!Array.isArray(remote) || remote.length === 0) return;
+        setDb((d) => {
+          const known = new Set(d.leads.map((l) => l.id));
+          const fresh: Lead[] = remote
+            .filter((l) => l && typeof l.id === "string" && !known.has(l.id))
+            .map((l) => ({
+              id: l.id!,
+              name: l.name ?? "Unknown",
+              phone: l.phone ?? "",
+              email: l.email ?? "",
+              address: l.address ?? "",
+              city: l.city ?? "",
+              serviceInterest: l.serviceInterest ?? "General inquiry",
+              message: l.message ?? "",
+              status: l.status ?? "new",
+              source: l.source ?? "website",
+              createdAt: l.createdAt ?? new Date().toISOString(),
+              estSqft: l.estSqft,
+              value: l.value,
+            }));
+          if (fresh.length === 0) return d;
+          return { ...d, leads: [...fresh, ...d.leads] };
+        });
+      } catch {
+        /* local dev or offline — dashboard still works from local data */
+      }
+    })();
+  }, []);
+
   // Persist: always to localStorage; debounced to the API when configured.
   useEffect(() => {
     try {

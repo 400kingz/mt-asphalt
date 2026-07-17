@@ -259,7 +259,8 @@ body {
     border-radius: var(--radius-sm);
     padding: 0.7rem 0.85rem;
     color: var(--color-cream);
-    font-size: 0.95rem;
+    /* 16px floor prevents iOS Safari from auto-zooming on focus */
+    font-size: 1rem;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .input:focus {
@@ -277,6 +278,12 @@ body {
     color: var(--color-muted);
     margin-bottom: 0.35rem;
   }
+}
+
+/* Disabled controls read as inert */
+button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 /* Focus ring for keyboard users */
