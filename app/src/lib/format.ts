@@ -22,7 +22,7 @@ export const dateTiny = (d?: string) => (d ? dayjs(d).format("MMM D") : "—");
 export const fromNow = (d?: string) => (d ? dayjs(d).fromNow() : "—");
 export const dayName = (d?: string) => (d ? dayjs(d).format("ddd") : "—");
 
-export const today = dayjs("2026-07-16");
+export const today = dayjs().startOf("day");
 
 export const daysUntil = (d?: string) => (d ? dayjs(d).diff(today, "day") : 0);
 

@@ -29,7 +29,7 @@ import {
 import { useStore } from "../../lib/store";
 import { StatTile, PaveProgress, StatusPill } from "../../components/ui";
 import { jobStageStyle } from "../../lib/status";
-import { money, compactMoney, fromNow, dateTiny, initials } from "../../lib/format";
+import { money, compactMoney, fromNow, dateTiny, initials, today } from "../../lib/format";
 
 export default function Overview() {
   const { db } = useStore();
@@ -82,9 +82,9 @@ export default function Overview() {
       {/* Greeting */}
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <div className="eyebrow mb-1">Wed · July 16, 2026 · Anaheim</div>
+          <div className="eyebrow mb-1">{today.format("ddd · MMMM D, YYYY")} · {settings.addressCity}</div>
           <h2 className="display text-2xl md:text-3xl text-cream">
-            Good morning, {settings.ownerName.split(" ")[0]}.
+            {greeting()}, {settings.ownerName.split(" ")[0]}.
           </h2>
           <p className="text-muted text-sm mt-1">
             {inProgress.length} job{inProgress.length !== 1 ? "s" : ""} on the ground ·{" "}
@@ -322,14 +322,20 @@ function activityColor(kind: string) {
   );
 }
 
-/* 5-day OC forecast with paving suitability — asphalt work is weather-dependent. */
+const greeting = () => {
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+};
+
+/* 5-day OC forecast with paving suitability — asphalt work is weather-dependent.
+   Day labels track the real calendar, starting today. */
 const FORECAST = [
-  { day: "Wed", hi: 84, lo: 65, rain: 0, icon: Sun, cond: "Sunny", pave: "ideal" },
-  { day: "Thu", hi: 86, lo: 66, rain: 0, icon: Sun, cond: "Clear", pave: "ideal" },
-  { day: "Fri", hi: 81, lo: 64, rain: 10, icon: CloudSun, cond: "Partly cloudy", pave: "good" },
-  { day: "Sat", hi: 77, lo: 63, rain: 40, icon: CloudRain, cond: "AM clouds", pave: "caution" },
-  { day: "Sun", hi: 83, lo: 65, rain: 5, icon: Sun, cond: "Sunny", pave: "ideal" },
-] as const;
+  { hi: 84, lo: 65, rain: 0, icon: Sun, cond: "Sunny", pave: "ideal" },
+  { hi: 86, lo: 66, rain: 0, icon: Sun, cond: "Clear", pave: "ideal" },
+  { hi: 81, lo: 64, rain: 10, icon: CloudSun, cond: "Partly cloudy", pave: "good" },
+  { hi: 77, lo: 63, rain: 40, icon: CloudRain, cond: "AM clouds", pave: "caution" },
+  { hi: 83, lo: 65, rain: 5, icon: Sun, cond: "Sunny", pave: "ideal" },
+].map((f, i) => ({ ...f, day: today.add(i, "day").format("ddd") }));
 
 function PaveWeather() {
   const paveColor = (p: string) => (p === "ideal" ? "#4ec27a" : p === "good" ? "#f2b705" : "#f25c05");

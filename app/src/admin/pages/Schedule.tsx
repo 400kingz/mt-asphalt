@@ -6,14 +6,15 @@ import { StatusPill } from "../../components/ui";
 import { jobStageStyle } from "../../lib/status";
 import { money, today } from "../../lib/format";
 
-const WEATHER: Record<string, { icon: typeof Sun; label: string; ok: boolean }> = {
-  "2026-07-16": { icon: Sun, label: "84° Sunny", ok: true },
-  "2026-07-17": { icon: Sun, label: "86° Clear", ok: true },
-  "2026-07-18": { icon: CloudSun, label: "81° P.Cloudy", ok: true },
-  "2026-07-19": { icon: CloudRain, label: "77° AM rain", ok: false },
-  "2026-07-20": { icon: Sun, label: "83° Sunny", ok: true },
-  "2026-07-21": { icon: Sun, label: "85° Sunny", ok: true },
-  "2026-07-22": { icon: Sun, label: "84° Clear", ok: true },
+// Forecast by day offset from today (0 = today), so it never goes stale.
+const WEATHER: Record<number, { icon: typeof Sun; label: string; ok: boolean }> = {
+  0: { icon: Sun, label: "84° Sunny", ok: true },
+  1: { icon: Sun, label: "86° Clear", ok: true },
+  2: { icon: CloudSun, label: "81° P.Cloudy", ok: true },
+  3: { icon: CloudRain, label: "77° AM rain", ok: false },
+  4: { icon: Sun, label: "83° Sunny", ok: true },
+  5: { icon: Sun, label: "85° Sunny", ok: true },
+  6: { icon: Sun, label: "84° Clear", ok: true },
 };
 
 export default function Schedule() {
@@ -24,7 +25,7 @@ export default function Schedule() {
       const d = today.add(i, "day");
       const key = d.format("YYYY-MM-DD");
       const jobs = db.jobs.filter((j) => j.scheduledDate === key);
-      return { d, key, jobs };
+      return { d, key, jobs, weather: WEATHER[i] };
     });
   }, [db.jobs]);
 
@@ -37,8 +38,7 @@ export default function Schedule() {
         <div className="flex items-center justify-between">
           <p className="text-muted text-sm">Next 10 days · weather-checked for paving & sealcoat</p>
         </div>
-        {days.map(({ d, key, jobs }) => {
-          const w = WEATHER[key];
+        {days.map(({ d, key, jobs, weather: w }) => {
           const isToday = key === today.format("YYYY-MM-DD");
           const Icon = w?.icon ?? Sun;
           return (

@@ -3,7 +3,7 @@ import { Printer, X, FileSignature, PenLine, ArrowRight } from "lucide-react";
 import { useStore } from "../../lib/store";
 import { StatusPill, EmptyState } from "../../components/ui";
 import { contractStatusStyle } from "../../lib/status";
-import { money, dateShort } from "../../lib/format";
+import { money, dateShort, today } from "../../lib/format";
 import { LogoMark } from "../../components/Logo";
 import type { Contract, ContractStatus } from "../../lib/types";
 
@@ -63,7 +63,7 @@ export default function Contracts() {
                 <div className="mt-3 flex items-center gap-2">
                   <button onClick={() => setPreview(c)} className="btn-ghost flex-1 text-xs py-2"><Printer size={13} /> View / print</button>
                   {next && (
-                    <button onClick={() => updateContract(c.id, { status: next, ...(next === "signed" ? { signedDate: "2026-07-16" } : {}) })} className="btn-primary flex-1 text-xs py-2">
+                    <button onClick={() => updateContract(c.id, { status: next, ...(next === "signed" ? { signedDate: today.format("YYYY-MM-DD") } : {}) })} className="btn-primary flex-1 text-xs py-2">
                       Mark {contractStatusStyle[next].label} <ArrowRight size={12} />
                     </button>
                   )}

@@ -12,7 +12,7 @@ import {
 import { useStore } from "../../lib/store";
 import { StatusPill, EmptyState } from "../../components/ui";
 import { invoiceStatusStyle } from "../../lib/status";
-import { money, dateShort, uid, invoiceSubtotal, daysUntil } from "../../lib/format";
+import { money, dateShort, uid, invoiceSubtotal, daysUntil, today } from "../../lib/format";
 import { LogoMark } from "../../components/Logo";
 import type { Invoice, InvoiceStatus, LineItem } from "../../lib/types";
 
@@ -30,7 +30,7 @@ export default function Invoices() {
     .filter((i) => (q ? (i.number + i.customerName).toLowerCase().includes(q.toLowerCase()) : true));
 
   const paidMTD = db.invoices
-    .filter((i) => i.status === "paid" && i.paidDate && i.paidDate >= "2026-07-01")
+    .filter((i) => i.status === "paid" && i.paidDate && i.paidDate >= today.startOf("month").format("YYYY-MM-DD"))
     .reduce((s, i) => s + invTotal(i), 0);
   const outstanding = db.invoices
     .filter((i) => i.status === "sent" || i.status === "overdue")
@@ -89,7 +89,7 @@ export default function Invoices() {
                       <Printer size={14} className="text-muted" />
                     </button>
                     {inv.status !== "paid" && (
-                      <button onClick={() => updateInvoice(inv.id, { status: "paid", paidDate: "2026-07-16" })} className="grid h-8 w-8 place-items-center rounded-lg card card-hover" title="Mark paid">
+                      <button onClick={() => updateInvoice(inv.id, { status: "paid", paidDate: today.format("YYYY-MM-DD") })} className="grid h-8 w-8 place-items-center rounded-lg card card-hover" title="Mark paid">
                         <CheckCircle2 size={14} className="text-ok" />
                       </button>
                     )}
@@ -275,8 +275,8 @@ function InvoiceBuilder({ onClose, onCreated }: { onClose: () => void; onCreated
       notes: "",
       paymentTerms: terms,
       status: "draft",
-      issuedDate: "2026-07-16",
-      dueDate: "2026-08-15",
+      issuedDate: today.format("YYYY-MM-DD"),
+      dueDate: today.add(30, "day").format("YYYY-MM-DD"),
     };
     addInvoice(inv);
     onCreated(inv);

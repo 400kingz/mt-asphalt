@@ -11,7 +11,7 @@ import {
 import { useStore } from "../../lib/store";
 import { equipmentStatusStyle } from "../../lib/status";
 import { StatusPill } from "../../components/ui";
-import { dateShort, num } from "../../lib/format";
+import { dateShort, num, today } from "../../lib/format";
 import type { Equipment } from "../../lib/types";
 
 const typeIcon: Record<Equipment["type"], typeof Truck> = {
@@ -91,7 +91,7 @@ export default function Fleet() {
 
               {(e.status === "maintenance" || e.status === "down") && (
                 <button
-                  onClick={() => updateEquipment(e.id, { status: "operational", lastService: "2026-07-16", nextServiceHours: e.hours + 150 })}
+                  onClick={() => updateEquipment(e.id, { status: "operational", lastService: today.format("YYYY-MM-DD"), nextServiceHours: e.hours + 150 })}
                   className="btn-primary w-full mt-3 text-xs py-2"
                 >
                   <CheckCircle2 size={13} /> Mark serviced
