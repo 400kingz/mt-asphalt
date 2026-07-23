@@ -157,7 +157,11 @@ export interface Invoice {
   customerName: string;
   customerAddress: string;
   customerEmail: string;
+  customerPhone?: string;
   jobSiteAddress: string;
+  projectType?: string; // e.g. "Resurfacing/overlay", "New installation"
+  sqft?: number; // estimated square footage of the work area
+  serviceTypes?: string[]; // services selected in the builder
   lineItems: LineItem[];
   taxRate: number;
   notes: string;

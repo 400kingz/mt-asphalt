@@ -46,7 +46,7 @@ function send(res, code, body, type = "application/json") {
     "Access-Control-Allow-Methods": "GET,PUT,POST,PATCH,DELETE,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   });
-  res.end(typeof body === "string" ? body : JSON.stringify(body));
+  res.end(typeof body === "string" || Buffer.isBuffer(body) ? body : JSON.stringify(body));
 }
 
 function readBody(req) {
