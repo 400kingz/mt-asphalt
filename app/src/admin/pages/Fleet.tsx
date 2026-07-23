@@ -33,7 +33,7 @@ export default function Fleet() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <MiniStat label="Fleet units" value={equipment.length} />
         <MiniStat label="Ready" value={ready} accent="#4ec27a" />
         <MiniStat label="Needs service" value={service} accent={service ? "#ef4d4d" : "#8a97a0"} />
@@ -49,11 +49,11 @@ export default function Fleet() {
           const overdue = dueIn <= 0;
           return (
             <div key={e.id} className={`card card-hover p-4 ${e.status === "down" ? "border-danger/40" : ""}`}>
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-3 min-w-0">
                   <span className="grid h-11 w-11 place-items-center rounded-xl bg-surface-2 text-highway shrink-0"><Icon size={22} /></span>
-                  <div>
-                    <div className="font-semibold text-cream leading-tight">{e.name}</div>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-cream leading-tight break-words">{e.name}</div>
                     <div className="data text-[11px] text-steel uppercase mt-0.5">{e.type.replace("_", " ")}</div>
                   </div>
                 </div>
@@ -62,18 +62,18 @@ export default function Fleet() {
 
               <div className="mt-4 grid grid-cols-2 gap-3 data text-xs">
                 <div>
-                  <div className="text-[10px] text-steel uppercase">Engine hours</div>
+                  <div className="text-[11px] sm:text-[10px] text-steel uppercase">Engine hours</div>
                   <div className="text-cream font-bold text-sm">{num(e.hours)}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-steel uppercase">Last service</div>
+                  <div className="text-[11px] sm:text-[10px] text-steel uppercase">Last service</div>
                   <div className="text-cream text-sm">{dateShort(e.lastService)}</div>
                 </div>
               </div>
 
               <div className="mt-3">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="data text-[10px] text-steel uppercase flex items-center gap-1"><Wrench size={10} /> Service cycle</span>
+                  <span className="data text-[11px] sm:text-[10px] text-steel uppercase flex items-center gap-1"><Wrench size={10} /> Service cycle</span>
                   <span className="data text-[11px]" style={{ color: overdue ? "#ef4d4d" : dueIn < 60 ? "#f2b705" : "#8a97a0" }}>
                     {overdue ? "DUE NOW" : `${num(dueIn)} hrs left`}
                   </span>
@@ -107,9 +107,9 @@ export default function Fleet() {
 
 function MiniStat({ label, value, accent = "#f2b705" }: { label: string; value: React.ReactNode; accent?: string }) {
   return (
-    <div className="card p-3.5 relative overflow-hidden">
+    <div className="card p-3 sm:p-3.5 relative overflow-hidden">
       <div className="absolute left-0 top-0 h-full w-1" style={{ background: accent }} />
-      <div className="data text-[10px] uppercase tracking-wider text-steel">{label}</div>
+      <div className="data text-[11px] sm:text-[10px] uppercase tracking-wide sm:tracking-wider text-steel">{label}</div>
       <div className="display text-cream mt-1 text-2xl">{value}</div>
     </div>
   );

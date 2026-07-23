@@ -45,7 +45,7 @@ export default function Jobs() {
           </span>{" "}
           in flight
         </p>
-        <div className="data text-[11px] text-steel hidden sm:block">← swipe the board · tap a card for details</div>
+        <div className="data text-[11px] text-steel">← swipe the board · tap a card for details</div>
       </div>
 
       {/* Kanban */}
@@ -62,7 +62,7 @@ export default function Jobs() {
                   <span className="display text-sm text-cream">{s.label}</span>
                   <span className="data text-[11px] text-steel">{jobs.length}</span>
                 </div>
-                <span className="data text-[10px] text-steel">{money(val)}</span>
+                <span className="data text-[11px] text-steel">{money(val)}</span>
               </div>
               <div className="space-y-2.5 min-h-[60px]">
                 {jobs.map((j) => (
@@ -97,7 +97,7 @@ function JobCard({
     <div className="card card-hover p-3">
       <button onClick={onOpen} className="text-left w-full">
         <div className="flex items-center justify-between">
-          <span className="data text-[10px] text-steel">{job.number}</span>
+          <span className="data text-[11px] text-steel">{job.number}</span>
           {job.weatherSensitive && <CloudRain size={12} className="text-info" />}
           {job.priority === "high" && (
             <span className="chip" style={{ color: "#f25c05", background: "rgba(242,92,5,0.14)", borderColor: "#f25c0555" }}>
@@ -134,11 +134,11 @@ function JobCard({
         )}
       </button>
       <div className="mt-2.5 pt-2.5 border-t border-hairline flex items-center justify-between">
-        <button onClick={() => onMove(-1)} className="text-steel-dim hover:text-cream p-1" aria-label="Move back" disabled={job.stage === "estimate"}>
+        <button onClick={() => onMove(-1)} className="text-steel-dim hover:text-cream grid h-11 w-11 place-items-center -my-2 -mx-1.5" aria-label="Move back" disabled={job.stage === "estimate"}>
           <ChevronLeft size={15} />
         </button>
         <span className="data text-[9px] text-steel-dim uppercase tracking-wider">move stage</span>
-        <button onClick={() => onMove(1)} className="text-steel hover:text-highway p-1" aria-label="Advance" disabled={job.stage === "paid"}>
+        <button onClick={() => onMove(1)} className="text-steel hover:text-highway grid h-11 w-11 place-items-center -my-2 -mx-1.5" aria-label="Advance" disabled={job.stage === "paid"}>
           <ChevronRight size={15} />
         </button>
       </div>
@@ -158,7 +158,7 @@ function JobDrawer({ job, onClose }: { job: Job; onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 fadein" />
       <div
-        className="relative w-full max-w-md bg-surface border-l border-hairline h-full overflow-y-auto rise"
+        className="relative w-full max-w-md bg-surface border-l border-hairline h-full overflow-y-auto overscroll-contain rise"
         style={{ animationDuration: "0.3s" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -167,7 +167,7 @@ function JobDrawer({ job, onClose }: { job: Job; onClose: () => void }) {
             <div className="data text-[11px] text-steel">{job.number}</div>
             <StatusPill s={s} live={job.stage === "in_progress"} />
           </div>
-          <button onClick={onClose} className="grid h-9 w-9 place-items-center rounded-lg card">
+          <button onClick={onClose} className="grid h-11 w-11 place-items-center rounded-lg card sm:h-9 sm:w-9">
             <X size={16} />
           </button>
         </div>
@@ -192,7 +192,7 @@ function JobDrawer({ job, onClose }: { job: Job; onClose: () => void }) {
                   <button
                     key={p}
                     onClick={() => updateJob(job.id, { progress: p, stage: p === 100 ? "completed" : "in_progress" })}
-                    className="btn-ghost flex-1 text-xs py-1.5"
+                    className="btn-ghost flex-1 text-xs px-2 py-1.5"
                   >
                     {p}%
                   </button>
@@ -205,7 +205,7 @@ function JobDrawer({ job, onClose }: { job: Job; onClose: () => void }) {
             <Detail icon={<Ruler size={14} />} label="Area" value={`${job.sqft.toLocaleString()} sq ft`} />
             <Detail icon={<DollarSign size={14} />} label="Contract" value={money(job.value)} />
             <Detail icon={<CalendarDays size={14} />} label="Scheduled" value={dateShort(job.scheduledDate)} />
-            <Detail icon={<Layers size={14} />} label="Margin" value={`${money(margin)} · ${marginPct}%`} accent="#4ec27a" />
+            <Detail icon={<Layers size={14} />} label="Margin" value={<>{money(margin)} <span className="whitespace-nowrap">· {marginPct}%</span></>} accent="#4ec27a" />
           </div>
 
           <div>
@@ -277,7 +277,7 @@ function JobDrawer({ job, onClose }: { job: Job; onClose: () => void }) {
   );
 }
 
-function Detail({ icon, label, value, accent = "#f6f4ef" }: { icon: React.ReactNode; label: string; value: string; accent?: string }) {
+function Detail({ icon, label, value, accent = "#f6f4ef" }: { icon: React.ReactNode; label: string; value: React.ReactNode; accent?: string }) {
   return (
     <div className="card p-3 bg-surface-2">
       <div className="flex items-center gap-1.5 text-steel">{icon}<span className="data text-[10px] uppercase">{label}</span></div>

@@ -21,6 +21,7 @@ export default function AdminLayout() {
   const { db } = useStore();
   const loc = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   if (!authed) return <Login onLogin={login} company={db.settings.companyName} />;
 
@@ -106,7 +107,14 @@ export default function AdminLayout() {
               className="bg-transparent outline-none text-sm text-cream w-full placeholder:text-steel-dim"
             />
           </div>
-          <button className="relative grid h-9 w-9 place-items-center rounded-lg card card-hover" aria-label="Notifications">
+          <button
+            onClick={() => setSearchOpen((v) => !v)}
+            className="md:hidden grid h-11 w-11 place-items-center rounded-lg card card-hover"
+            aria-label="Search"
+          >
+            <Search size={16} className="text-muted" />
+          </button>
+          <button className="relative grid h-11 w-11 lg:h-9 lg:w-9 place-items-center rounded-lg card card-hover" aria-label="Notifications">
             <Bell size={16} className="text-muted" />
             {newLeads > 0 && (
               <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 grid place-items-center rounded-full bg-highway text-asphalt data text-[9px] font-bold">
@@ -114,10 +122,27 @@ export default function AdminLayout() {
               </span>
             )}
           </button>
-          <a href={"tel:" + db.settings.phonePrimary.replace(/[^\d]/g, "")} className="btn-primary text-sm hidden sm:inline-flex">
+          <a
+            href={"tel:" + db.settings.phonePrimary.replace(/[^\d]/g, "")}
+            className="btn-primary text-sm inline-flex"
+            aria-label={"Call " + db.settings.phonePrimary}
+          >
             <Phone size={15} /> <span className="hidden md:inline">{db.settings.phonePrimary}</span>
           </a>
         </header>
+
+        {searchOpen && (
+          <div className="md:hidden px-4 py-2 border-b border-hairline bg-asphalt/90">
+            <div className="flex items-center gap-2 card px-3 py-1.5 w-full text-steel">
+              <Search size={15} />
+              <input
+                placeholder="Search jobs, customers…"
+                className="bg-transparent outline-none text-sm text-cream w-full placeholder:text-steel-dim"
+                autoFocus
+              />
+            </div>
+          </div>
+        )}
 
         {/* Page */}
         <main className="flex-1 p-4 lg:p-6 pb-24 lg:pb-6 max-w-[1400px] w-full mx-auto">
@@ -133,7 +158,7 @@ export default function AdminLayout() {
             to={item.to}
             end={item.to === "/dashboard"}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] relative ${
+              `flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] relative ${
                 isActive ? "text-highway" : "text-steel"
               }`
             }
@@ -144,7 +169,7 @@ export default function AdminLayout() {
                 <span className="relative">
                   <item.icon size={19} />
                   {item.to === "/dashboard/leads" && newLeads > 0 && (
-                    <span className="absolute -top-1.5 -right-2 h-3.5 min-w-3.5 px-1 grid place-items-center rounded-full bg-highway text-asphalt data text-[8px] font-bold">
+                    <span className="absolute -top-1.5 -right-2 h-4 min-w-4 px-1 grid place-items-center rounded-full bg-highway text-asphalt data text-[9px] font-bold">
                       {newLeads}
                     </span>
                   )}
@@ -156,7 +181,7 @@ export default function AdminLayout() {
         ))}
         <button
           onClick={() => setMoreOpen(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] text-steel"
+          className="flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] text-steel"
         >
           <Grip size={19} />
           <span className="font-medium">More</span>
@@ -167,10 +192,10 @@ export default function AdminLayout() {
       {moreOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-black/60 fadein" />
-          <div className="relative bg-surface border-t border-hairline rounded-t-2xl p-4 pb-8 rise max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="relative bg-surface border-t border-hairline rounded-t-2xl p-4 pb-[calc(2rem+env(safe-area-inset-bottom))] rise max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <Wordmark size={26} />
-              <button onClick={() => setMoreOpen(false)} className="grid h-8 w-8 place-items-center rounded-lg card">
+              <button onClick={() => setMoreOpen(false)} className="grid h-11 w-11 place-items-center rounded-lg card">
                 <X size={16} />
               </button>
             </div>
@@ -238,7 +263,7 @@ function Login({ onLogin, company }: { onLogin: (p: string) => boolean; company:
           <div className="lg:hidden mb-8 flex justify-center">
             <Wordmark size={38} showTagline />
           </div>
-          <div className="card p-8">
+          <div className="card p-6 sm:p-8">
             <div className="grid h-12 w-12 place-items-center rounded-xl bg-highway/10 text-highway mb-5">
               <Lock size={22} />
             </div>
@@ -275,7 +300,7 @@ function Login({ onLogin, company }: { onLogin: (p: string) => boolean; company:
               Demo console — any password unlocks the dashboard.
             </div>
           </div>
-          <Link to="/" className="mt-5 flex items-center justify-center gap-1.5 text-sm text-steel hover:text-cream">
+          <Link to="/" className="mt-5 flex items-center justify-center gap-1.5 py-2.5 text-sm text-steel hover:text-cream">
             ← Back to public site
           </Link>
         </div>

@@ -39,16 +39,16 @@ export default function Leads() {
 
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="card flex items-center gap-2 px-3 py-2 text-steel flex-1 min-w-[180px] max-w-xs">
+        <div className="card flex items-center gap-2 px-3 py-2 text-steel flex-1 min-w-[180px] max-w-full sm:max-w-xs max-sm:min-h-11">
           <SearchIcon size={15} />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search leads…"
-            className="bg-transparent outline-none text-sm text-cream w-full placeholder:text-steel-dim"
+            className="bg-transparent outline-none text-base sm:text-sm text-cream w-full placeholder:text-steel-dim"
           />
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap max-sm:flex-nowrap max-sm:overflow-x-auto no-sb max-sm:-mx-4 max-sm:px-4 max-sm:basis-full">
           <FilterChip active={filter === "all"} onClick={() => setFilter("all")}>
             All ({db.leads.length})
           </FilterChip>
@@ -105,24 +105,24 @@ function LeadCard({ lead, onAdvance }: { lead: Lead; onAdvance: (s: LeadStatus) 
         {lead.estSqft ? <span>{lead.estSqft.toLocaleString()} sq ft</span> : null}
       </div>
 
-      <div className="mt-4 pt-3 border-t border-hairline flex items-center gap-2">
+      <div className="mt-4 pt-3 border-t border-hairline flex flex-wrap items-center gap-2">
         <a href={"tel:" + lead.phone.replace(/[^\d]/g, "")} className="btn-ghost flex-1 text-xs py-2">
           <Phone size={13} /> Call
         </a>
         {lead.email && (
-          <a href={"mailto:" + lead.email} className="btn-ghost text-xs py-2 px-3" aria-label="Email">
+          <a href={"mailto:" + lead.email} className="btn-ghost text-xs py-2 px-3 max-sm:min-w-11" aria-label="Email">
             <Mail size={13} />
           </a>
         )}
         {next && (
-          <button onClick={() => onAdvance(next)} className="btn-primary flex-1 text-xs py-2">
+          <button onClick={() => onAdvance(next)} className="btn-primary flex-1 text-xs py-2 whitespace-nowrap max-sm:order-last max-sm:basis-full">
             Mark {leadStatusStyle[next].label} <ArrowRight size={13} />
           </button>
         )}
         {lead.status !== "lost" && lead.status !== "won" && (
           <button
             onClick={() => onAdvance("lost")}
-            className="text-xs text-steel-dim hover:text-danger px-2"
+            className="text-xs text-steel-dim hover:text-danger px-2 py-2 self-stretch max-sm:min-h-11 max-sm:px-3"
             title="Mark lost"
           >
             Lost
@@ -137,7 +137,7 @@ function MiniStat({ label, value, accent, small }: { label: string; value: React
   return (
     <div className="card p-3.5 relative overflow-hidden">
       <div className="absolute left-0 top-0 h-full w-1" style={{ background: accent }} />
-      <div className="data text-[10px] uppercase tracking-wider text-steel">{label}</div>
+      <div className="data text-[11px] sm:text-[10px] uppercase tracking-wider text-steel">{label}</div>
       <div className={`display text-cream mt-1 ${small ? "text-xl" : "text-2xl"}`}>{value}</div>
     </div>
   );

@@ -82,7 +82,7 @@ export default function Overview() {
       {/* Greeting */}
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <div className="eyebrow mb-1">{today.format("ddd · MMMM D, YYYY")} · {settings.addressCity}</div>
+          <div className="eyebrow mb-1"><span className="sm:hidden">{today.format("ddd · MMM D")}</span><span className="hidden sm:inline">{today.format("ddd · MMMM D, YYYY")}</span> · {settings.addressCity}</div>
           <h2 className="display text-2xl md:text-3xl text-cream">
             {greeting()}, {settings.ownerName.split(" ")[0]}.
           </h2>
@@ -137,7 +137,7 @@ export default function Overview() {
               <div className="eyebrow mb-1">Trailing 12 months</div>
               <h3 className="display text-lg text-cream">Revenue vs. expenses</h3>
             </div>
-            <Link to="/dashboard/finance" className="text-xs text-steel hover:text-cream flex items-center gap-1">
+            <Link to="/dashboard/finance" className="text-xs text-steel hover:text-cream flex items-center gap-1 py-3.5 -my-3.5 px-2 -mx-2">
               Finance <ArrowRight size={13} />
             </Link>
           </div>
@@ -175,7 +175,7 @@ export default function Overview() {
           <div className="card p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="display text-lg text-cream">On the ground</h3>
-              <Link to="/dashboard/jobs" className="text-xs text-steel hover:text-cream flex items-center gap-1">
+              <Link to="/dashboard/jobs" className="text-xs text-steel hover:text-cream flex items-center gap-1 py-3.5 -my-3.5 px-2 -mx-2">
                 All jobs <ArrowRight size={13} />
               </Link>
             </div>
@@ -241,7 +241,7 @@ export default function Overview() {
                     <div className="display text-2xl" style={{ color: s.fg }}>
                       {count}
                     </div>
-                    <div className="data text-[9px] text-steel uppercase mt-1 leading-tight">{s.label}</div>
+                    <div className="data text-[11px] sm:text-[9px] text-steel uppercase mt-1 leading-tight">{s.label}</div>
                   </div>
                 );
               })}
@@ -263,7 +263,7 @@ export default function Overview() {
             ) : (
               <div className="space-y-2">
                 {attention.map((a, i) => (
-                  <Link key={i} to={a.to} className="flex items-center gap-3 card card-hover p-2.5 bg-surface-2">
+                  <Link key={i} to={a.to} className="flex items-center gap-3 card card-hover p-2.5 bg-surface-2 min-h-[44px] lg:min-h-0">
                     <span style={{ color: a.color }}>{a.icon}</span>
                     <span className="text-xs text-cream flex-1">{a.text}</span>
                     <ArrowRight size={13} className="text-steel-dim" />

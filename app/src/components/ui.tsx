@@ -58,20 +58,20 @@ export function StatTile({
         </div>
         {icon && <span style={{ color: accent }}>{icon}</span>}
       </div>
-      <div className="data text-cream mt-2" style={{ fontSize: 26, fontWeight: 700 }}>
+      <div className="data text-cream mt-2 font-bold text-[22px] leading-tight sm:text-[26px]">
         {value}
       </div>
       {(sub || trend) && (
-        <div className="mt-1 flex items-center gap-2 text-xs text-muted">
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
           {trend && (
             <span
-              className="data font-bold"
+              className="data font-bold whitespace-nowrap"
               style={{ color: trend.dir === "up" ? "#4ec27a" : "#ef4d4d" }}
             >
               {trend.dir === "up" ? "▲" : "▼"} {trend.text}
             </span>
           )}
-          {sub && <span>{sub}</span>}
+          {sub && <span className="whitespace-nowrap">{sub}</span>}
         </div>
       )}
     </div>
@@ -171,7 +171,7 @@ export function Avatar({ initials, color = "#f2b705" }: { initials: string; colo
 
 export function EmptyState({ icon, title, hint }: { icon?: React.ReactNode; title: string; hint?: string }) {
   return (
-    <div className="card p-10 text-center">
+    <div className="card p-6 sm:p-10 text-center">
       {icon && <div className="mx-auto mb-3 text-steel-dim">{icon}</div>}
       <div className="display text-lg text-steel">{title}</div>
       {hint && <div className="text-muted text-sm mt-1">{hint}</div>}

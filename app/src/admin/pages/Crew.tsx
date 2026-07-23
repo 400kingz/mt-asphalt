@@ -48,7 +48,7 @@ export default function Crew() {
                   </div>
                   <div className="data text-[11px] text-steel flex items-center gap-1"><HardHat size={11} /> {roleLabel[c.role]}</div>
                 </div>
-                <span className="h-2.5 w-2.5 rounded-full mt-1.5" style={{ background: meta.color }} title={meta.label} />
+                <span className="flex items-center gap-1.5 mt-1.5 shrink-0" title={meta.label}><span className="h-2.5 w-2.5 rounded-full" style={{ background: meta.color }} /><span className="data text-[11px] lg:hidden" style={{ color: meta.color }}>{meta.label}</span></span>
               </div>
 
               <div className="flex flex-wrap gap-1.5 mt-3">

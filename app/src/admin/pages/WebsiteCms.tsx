@@ -11,7 +11,7 @@ export default function WebsiteCms() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="card p-4 flex items-center justify-between gap-3 border-highway/30 bg-highway/5">
+      <div className="card p-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between border-highway/30 bg-highway/5">
         <div className="flex items-center gap-3">
           <Globe size={18} className="text-highway" />
           <div>
@@ -42,7 +42,7 @@ export default function WebsiteCms() {
         <div className="flex items-center gap-2 mb-3 data text-[11px] text-steel">
           <Palette size={13} className="text-highway" /> Derived from the MT Asphalt flyer
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Swatch label="Charcoal" value={s.brandPrimary} onChange={(v) => updateSettings({ brandPrimary: v })} />
           <Swatch label="Highway yellow" value={s.brandAccent} onChange={(v) => updateSettings({ brandAccent: v })} />
           <Swatch label="Safety orange" value={s.brandSecondary} onChange={(v) => updateSettings({ brandSecondary: v })} />
@@ -79,20 +79,20 @@ function ServiceRow({ svc, onChange, onRemove }: { svc: Service; onChange: (p: P
   const Icon = getServiceIcon(svc.icon);
   return (
     <div className={`card bg-surface-2 ${svc.active ? "" : "opacity-60"}`}>
-      <div className="flex items-center gap-3 p-3">
-        <GripVertical size={16} className="text-steel-dim shrink-0" />
+      <div className="flex items-center gap-2 sm:gap-3 p-3">
+        <GripVertical size={16} className="hidden sm:block text-steel-dim shrink-0" />
         <span className="grid h-9 w-9 place-items-center rounded-lg bg-highway/10 text-highway shrink-0"><Icon size={18} /></span>
         <button onClick={() => setOpen((v) => !v)} className="flex-1 text-left min-w-0">
           <div className="text-sm text-cream font-medium truncate">{svc.name}</div>
           <div className="data text-[11px] text-steel truncate">{svc.short}</div>
         </button>
-        <button onClick={() => onChange({ featured: !svc.featured })} title="Featured" className="p-1.5">
+        <button onClick={() => onChange({ featured: !svc.featured })} title="Featured" aria-label="Toggle featured" className="grid h-11 w-11 place-items-center sm:h-auto sm:w-auto sm:p-1.5">
           <Star size={15} className={svc.featured ? "text-highway" : "text-steel-dim"} fill={svc.featured ? "#f2b705" : "none"} />
         </button>
-        <button onClick={() => onChange({ active: !svc.active })} title={svc.active ? "Shown" : "Hidden"} className="p-1.5">
+        <button onClick={() => onChange({ active: !svc.active })} title={svc.active ? "Shown" : "Hidden"} aria-label={svc.active ? "Hide service" : "Show service"} className="grid h-11 w-11 place-items-center sm:h-auto sm:w-auto sm:p-1.5">
           {svc.active ? <Eye size={15} className="text-ok" /> : <EyeOff size={15} className="text-steel" />}
         </button>
-        <button onClick={onRemove} className="p-1.5 text-steel-dim hover:text-danger"><Trash2 size={15} /></button>
+        <button onClick={onRemove} aria-label="Remove service" className="grid h-11 w-11 place-items-center sm:h-auto sm:w-auto sm:p-1.5 text-steel-dim hover:text-danger"><Trash2 size={15} /></button>
       </div>
       {open && (
         <div className="px-3 pb-3 pt-1 border-t border-hairline space-y-3 fadein">
@@ -103,11 +103,11 @@ function ServiceRow({ svc, onChange, onRemove }: { svc: Service; onChange: (p: P
           <Field label="Short description"><input className="input py-1.5 text-sm" value={svc.short} onChange={(e) => onChange({ short: e.target.value })} /></Field>
           <Field label="Full description"><textarea className="input py-1.5 text-sm min-h-[70px] resize-y" value={svc.description} onChange={(e) => onChange({ description: e.target.value })} /></Field>
           <Field label="Icon">
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2 sm:gap-1.5">
               {serviceIconKeys.map((k) => {
                 const I = getServiceIcon(k);
                 return (
-                  <button key={k} onClick={() => onChange({ icon: k })} className="grid h-9 w-9 place-items-center rounded-lg border transition-colors" style={svc.icon === k ? { background: "#f2b705", color: "#17130a", borderColor: "#f2b705" } : { background: "var(--color-asphalt)", color: "var(--color-muted)", borderColor: "var(--color-hairline)" }}>
+                  <button key={k} onClick={() => onChange({ icon: k })} className="grid h-11 w-11 sm:h-9 sm:w-9 place-items-center rounded-lg border transition-colors" style={svc.icon === k ? { background: "#f2b705", color: "#17130a", borderColor: "#f2b705" } : { background: "var(--color-asphalt)", color: "var(--color-muted)", borderColor: "var(--color-hairline)" }}>
                     <I size={16} />
                   </button>
                 );
@@ -146,9 +146,9 @@ function Swatch({ label, value, onChange }: { label: string; value: string; onCh
   return (
     <label className="card bg-surface-2 p-3 flex flex-col items-center gap-2 cursor-pointer">
       <div className="h-12 w-full rounded-lg border border-hairline" style={{ background: value }} />
-      <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="w-full h-7 bg-transparent cursor-pointer" />
+      <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="w-full h-11 sm:h-7 bg-transparent cursor-pointer" />
       <div className="text-center">
-        <div className="data text-[10px] text-steel uppercase">{label}</div>
+        <div className="data text-[11px] sm:text-[10px] text-steel uppercase">{label}</div>
         <div className="data text-[11px] text-cream">{value}</div>
       </div>
     </label>

@@ -75,7 +75,7 @@ export default function Invoices() {
               const overdue = inv.status === "overdue";
               return (
                 <div key={inv.id} className="grid md:grid-cols-[1fr_1.4fr_1fr_0.8fr_0.9fr_auto] gap-2 md:gap-3 px-4 py-3 items-center hover:bg-surface-2/50 transition-colors">
-                  <button onClick={() => setPreview(inv)} className="data text-sm text-highway text-left">{inv.number}</button>
+                  <button onClick={() => setPreview(inv)} className="data text-sm text-highway text-left py-2.5 -my-2.5 pr-4 md:py-0 md:my-0 md:pr-0">{inv.number}</button>
                   <div className="text-sm text-cream truncate">{inv.customerName}</div>
                   <div className="data text-[11px] text-steel">
                     {dateShort(inv.issuedDate)}
@@ -85,16 +85,16 @@ export default function Invoices() {
                   <div><StatusPill s={invoiceStatusStyle[inv.status]} live={overdue} /></div>
                   <div className="data text-sm text-cream md:text-right font-bold">{money(invTotal(inv))}</div>
                   <div className="flex items-center gap-1 md:justify-end">
-                    <button onClick={() => setPreview(inv)} className="grid h-8 w-8 place-items-center rounded-lg card card-hover" title="Preview / print">
+                    <button onClick={() => setPreview(inv)} className="grid h-11 w-11 md:h-8 md:w-8 place-items-center rounded-lg card card-hover" title="Preview / print" aria-label="Preview / print">
                       <Printer size={14} className="text-muted" />
                     </button>
                     {inv.status !== "paid" && (
-                      <button onClick={() => updateInvoice(inv.id, { status: "paid", paidDate: today.format("YYYY-MM-DD") })} className="grid h-8 w-8 place-items-center rounded-lg card card-hover" title="Mark paid">
+                      <button onClick={() => updateInvoice(inv.id, { status: "paid", paidDate: today.format("YYYY-MM-DD") })} className="grid h-11 w-11 md:h-8 md:w-8 place-items-center rounded-lg card card-hover" title="Mark paid" aria-label="Mark paid">
                         <CheckCircle2 size={14} className="text-ok" />
                       </button>
                     )}
                     {inv.status === "draft" && (
-                      <button onClick={() => updateInvoice(inv.id, { status: "sent" })} className="grid h-8 w-8 place-items-center rounded-lg card card-hover" title="Mark sent">
+                      <button onClick={() => updateInvoice(inv.id, { status: "sent" })} className="grid h-11 w-11 md:h-8 md:w-8 place-items-center rounded-lg card card-hover" title="Mark sent" aria-label="Mark sent">
                         <Send size={14} className="text-info" />
                       </button>
                     )}
@@ -123,13 +123,13 @@ function InvoicePreview({ invoice, onClose }: { invoice: Invoice; onClose: () =>
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 flex items-start justify-center p-3 md:p-8 print-root" onClick={onClose}>
       <div className="w-full max-w-2xl my-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-3 no-print">
-          <span className="data text-xs text-steel">Preview · {invoice.number}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3 no-print">
+          <span className="data text-xs text-steel truncate min-w-0">Preview · {invoice.number}</span>
           <div className="flex gap-2">
-            <button onClick={() => window.print()} className="btn-primary text-sm">
-              <Printer size={15} /> Print / Save PDF
+            <button onClick={() => window.print()} className="btn-primary text-sm whitespace-nowrap">
+              <Printer size={15} /> Print<span className="hidden sm:inline"> / Save PDF</span>
             </button>
-            <button onClick={onClose} className="btn-ghost text-sm px-3">
+            <button onClick={onClose} className="btn-ghost text-sm px-3 whitespace-nowrap">
               <X size={16} />
             </button>
           </div>
@@ -155,7 +155,7 @@ function InvoicePreview({ invoice, onClose }: { invoice: Invoice; onClose: () =>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 mt-6 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-6 text-sm">
               <div>
                 <div className="data text-[10px] uppercase tracking-wider text-neutral-400 mb-1">From</div>
                 <div className="font-bold">{s.legalEntityName}</div>
@@ -168,7 +168,7 @@ function InvoicePreview({ invoice, onClose }: { invoice: Invoice; onClose: () =>
                 <div className="data text-[10px] uppercase tracking-wider text-neutral-400 mb-1">Bill to</div>
                 <div className="font-bold">{invoice.customerName}</div>
                 <div className="text-neutral-600 whitespace-pre-line">{invoice.customerAddress}</div>
-                <div className="text-neutral-600">{invoice.customerEmail}</div>
+                <div className="text-neutral-600 break-words">{invoice.customerEmail}</div>
                 <div className="mt-2 data text-[11px] text-neutral-500">
                   Issued {dateShort(invoice.issuedDate)} · Due {dateShort(invoice.dueDate)}
                 </div>
@@ -213,7 +213,7 @@ function InvoicePreview({ invoice, onClose }: { invoice: Invoice; onClose: () =>
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-6 text-xs text-neutral-600">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 text-xs text-neutral-600">
               <div>
                 <div className="data text-[10px] uppercase tracking-wider text-neutral-400 mb-1">Payment terms</div>
                 <div>{invoice.paymentTerms}</div>
@@ -291,14 +291,14 @@ function InvoiceBuilder({ onClose, onCreated }: { onClose: () => void; onCreated
             <div className="data text-[11px] text-steel">New invoice</div>
             <h3 className="display text-lg text-cream">{nextNum}</h3>
           </div>
-          <button onClick={onClose} className="grid h-9 w-9 place-items-center rounded-lg card"><X size={16} /></button>
+          <button onClick={onClose} className="grid h-11 w-11 md:h-9 md:w-9 place-items-center rounded-lg card"><X size={16} /></button>
         </div>
 
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-1 gap-3">
             <L label="Customer name"><input className="input" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Acme Property Mgmt" /></L>
             <L label="Billing address"><input className="input" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} placeholder="123 Main St, Anaheim, CA" /></L>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <L label="Email"><input className="input" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="ap@acme.com" /></L>
               <L label="Job site"><input className="input" value={jobSite} onChange={(e) => setJobSite(e.target.value)} placeholder="Same as billing" /></L>
             </div>
@@ -307,7 +307,7 @@ function InvoiceBuilder({ onClose, onCreated }: { onClose: () => void; onCreated
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="field-label mb-0">Line items</span>
-              <button onClick={() => setItems((a) => [...a, { id: uid("li"), description: "", qty: 1, unit: "job", rate: 0 }])} className="text-xs text-highway flex items-center gap-1">
+              <button onClick={() => setItems((a) => [...a, { id: uid("li"), description: "", qty: 1, unit: "job", rate: 0 }])} className="text-xs text-highway flex items-center gap-1 min-h-[44px] px-3 -mx-3 md:min-h-0 md:px-0 md:mx-0">
                 <Plus size={13} /> Add
               </button>
             </div>
@@ -319,7 +319,7 @@ function InvoiceBuilder({ onClose, onCreated }: { onClose: () => void; onCreated
                     <input className="input py-1.5 text-sm data" type="number" value={it.qty} onChange={(e) => setItem(it.id, { qty: Number(e.target.value) })} placeholder="Qty" />
                     <input className="input py-1.5 text-sm" value={it.unit} onChange={(e) => setItem(it.id, { unit: e.target.value })} placeholder="unit" />
                     <input className="input py-1.5 text-sm data" type="number" value={it.rate} onChange={(e) => setItem(it.id, { rate: Number(e.target.value) })} placeholder="Rate $" />
-                    <button onClick={() => setItems((a) => a.filter((x) => x.id !== it.id))} className="text-steel-dim hover:text-danger p-1"><Trash2 size={14} /></button>
+                    <button onClick={() => setItems((a) => a.filter((x) => x.id !== it.id))} className="grid h-11 w-11 place-items-center text-steel-dim hover:text-danger md:h-auto md:w-auto md:p-1"><Trash2 size={14} /></button>
                   </div>
                   <div className="data text-[11px] text-steel text-right">= {money(it.qty * it.rate)}</div>
                 </div>

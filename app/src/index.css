@@ -286,6 +286,32 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Grid items must be allowed to shrink below their content's min-content
+   width, or any truncate/nowrap text inside inflates the whole track and
+   the page pans horizontally on phones. Utilities can still override. */
+@layer base {
+  .grid > * {
+    min-width: 0;
+  }
+}
+
+/* Mobile touch floor — the dashboard is used gloved, on a phone */
+@media (max-width: 1023px) {
+  .btn-primary,
+  .btn-ghost {
+    min-height: 44px;
+  }
+}
+@media (max-width: 639px) {
+  .chip {
+    font-size: 11px;
+  }
+  button.chip {
+    min-height: 2.5rem;
+    padding-inline: 0.75rem;
+  }
+}
+
 /* Focus ring for keyboard users */
 :focus-visible {
   outline: 2px solid var(--color-highway);
@@ -325,6 +351,8 @@ button:disabled {
   background: var(--color-surface-2) !important;
   border: 1px solid var(--color-hairline) !important;
   border-radius: 10px !important;
+  max-width: min(300px, calc(100vw - 32px)) !important;
+  white-space: normal !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -24,10 +24,10 @@ export default function Contracts() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <MiniStat label="Contracts" value={db.contracts.length} />
         <MiniStat label="Active value" value={money(active.reduce((s, c) => s + c.totalAmount, 0))} small />
-        <MiniStat label="Total booked" value={money(totalValue)} small />
+        <MiniStat label="Total booked" value={money(totalValue)} small className="col-span-2 sm:col-span-1 order-last sm:order-none" />
       </div>
 
       {db.contracts.length === 0 ? (
@@ -61,9 +61,9 @@ export default function Contracts() {
                   </div>
                 </div>
                 <div className="mt-3 flex items-center gap-2">
-                  <button onClick={() => setPreview(c)} className="btn-ghost flex-1 text-xs py-2"><Printer size={13} /> View / print</button>
+                  <button onClick={() => setPreview(c)} className="btn-ghost flex-1 text-xs py-2 px-3 lg:px-[1.4rem]"><Printer size={13} /> View / print</button>
                   {next && (
-                    <button onClick={() => updateContract(c.id, { status: next, ...(next === "signed" ? { signedDate: today.format("YYYY-MM-DD") } : {}) })} className="btn-primary flex-1 text-xs py-2">
+                    <button onClick={() => updateContract(c.id, { status: next, ...(next === "signed" ? { signedDate: today.format("YYYY-MM-DD") } : {}) })} className="btn-primary flex-1 text-xs py-2 px-3 lg:px-[1.4rem]">
                       Mark {contractStatusStyle[next].label} <ArrowRight size={12} />
                     </button>
                   )}
@@ -90,7 +90,7 @@ function ContractPreview({ contract, onClose }: { contract: Contract; onClose: (
           <span className="data text-xs text-steel">{contract.number}</span>
           <div className="flex gap-2">
             <button onClick={() => window.print()} className="btn-primary text-sm"><Printer size={15} /> Print / Save PDF</button>
-            <button onClick={onClose} className="btn-ghost text-sm px-3"><X size={16} /></button>
+            <button onClick={onClose} className="btn-ghost text-sm px-3 min-w-[44px] lg:min-w-0"><X size={16} /></button>
           </div>
         </div>
         <div className="print-doc bg-white text-[#17171a] rounded-lg overflow-hidden shadow-2xl">
@@ -110,7 +110,7 @@ function ContractPreview({ contract, onClose }: { contract: Contract; onClose: (
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 mt-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 mt-6">
               <Party title="Contractor" lines={[s.legalEntityName, s.ownerName + ", Owner", s.addressLine1, `${s.addressCity}, ${s.addressState} ${s.addressZip}`, s.phonePrimary, `Bond #${s.bondNumber} · ${money(s.bondAmount)}`]} />
               <Party title="Customer" lines={[contract.customerName, contract.customerAddress]} />
             </div>
@@ -127,7 +127,7 @@ function ContractPreview({ contract, onClose }: { contract: Contract; onClose: (
             <Section title="2 · Contract Price & Payment">
               <div className="flex justify-between border-b border-neutral-200 py-1.5"><span className="text-neutral-600">Total contract amount</span><span className="data font-bold">{money(contract.totalAmount)}</span></div>
               <div className="flex justify-between py-1.5 text-neutral-600"><span>Payment schedule</span><span className="data text-right">{contract.paymentSchedule}</span></div>
-              <div className="data text-[11px] text-neutral-500 mt-1">Deposit due at signing: {money(half)} · Balance on completion: {money(half)}</div>
+              <div className="data text-[11px] text-neutral-500 mt-1"><span className="whitespace-nowrap">Deposit due at signing: {money(half)}</span> · <span className="whitespace-nowrap">Balance on completion: {money(half)}</span></div>
             </Section>
 
             <Section title="3 · Warranty & Terms">
@@ -140,7 +140,7 @@ function ContractPreview({ contract, onClose }: { contract: Contract; onClose: (
               </ul>
             </Section>
 
-            <div className="grid grid-cols-2 gap-8 mt-8">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 mt-8">
               <Sign label="Customer signature" />
               <Sign label="Michael Tebb — MT Asphalt" />
             </div>
@@ -182,11 +182,11 @@ function Sign({ label }: { label: string }) {
     </div>
   );
 }
-function MiniStat({ label, value, small }: { label: string; value: React.ReactNode; small?: boolean }) {
+function MiniStat({ label, value, small, className }: { label: string; value: React.ReactNode; small?: boolean; className?: string }) {
   return (
-    <div className="card p-3.5 relative overflow-hidden">
+    <div className={`card p-3.5 relative overflow-hidden ${className ?? ""}`}>
       <div className="absolute left-0 top-0 h-full w-1 bg-highway" />
-      <div className="data text-[10px] uppercase tracking-wider text-steel">{label}</div>
+      <div className="data text-[11px] sm:text-[10px] uppercase tracking-wider text-steel">{label}</div>
       <div className={`display text-cream mt-1 ${small ? "text-lg" : "text-2xl"}`}>{value}</div>
     </div>
   );

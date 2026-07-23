@@ -11,15 +11,15 @@ export default function Materials() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
         <MiniStat label="SKUs" value={materials.length} />
-        <MiniStat label="Inventory value" value={money(inventoryValue)} small />
+        <MiniStat label="Inventory value" value={money(inventoryValue)} small className="col-span-2 sm:col-span-1 order-last sm:order-none" />
         <MiniStat label="Reorder now" value={low.length} accent={low.length ? "#ef4d4d" : "#4ec27a"} />
       </div>
 
       {low.length > 0 && (
-        <div className="card p-3 border-safety/40 bg-safety/5 flex items-center gap-2">
-          <AlertTriangle size={16} className="text-safety shrink-0" />
+        <div className="card p-3 border-safety/40 bg-safety/5 flex items-start md:items-center gap-2">
+          <AlertTriangle size={16} className="text-safety shrink-0 mt-0.5 md:mt-0" />
           <span className="text-sm text-cream">
             {low.length} material{low.length > 1 ? "s" : ""} at or below reorder point — {low.map((m) => m.name).join(", ")}.
           </span>
@@ -41,7 +41,7 @@ export default function Materials() {
                     <Package size={15} className={low ? "text-safety" : "text-steel"} />
                     <span className="text-sm text-cream font-medium">{m.name}</span>
                   </div>
-                  <div className="data text-[10px] text-steel mt-0.5 ml-6">{m.supplier} · {money(m.unitCost, true)}/{m.unit}</div>
+                  <div className="data text-[11px] md:text-[10px] text-steel mt-0.5 ml-6">{m.supplier} · {money(m.unitCost, true)}/{m.unit}</div>
                 </div>
                 <div>
                   <div className="data text-sm" style={{ color: low ? "#f25c05" : "#f6f4ef" }}>{num(m.onHand)} <span className="text-steel text-[11px]">{m.unit}</span></div>
@@ -49,13 +49,13 @@ export default function Materials() {
                     <div className="h-full rounded-full" style={{ width: `${pct}%`, background: low ? "#f25c05" : "#4ec27a" }} />
                   </div>
                 </div>
-                <div className="data text-sm text-steel">{num(m.reorderAt)} {m.unit}</div>
-                <div className="data text-sm text-cream">{money(m.onHand * m.unitCost)}</div>
+                <div className="data text-sm text-steel"><span className="md:hidden text-[10px] uppercase tracking-wider mr-1.5">Reorder at</span>{num(m.reorderAt)} {m.unit}</div>
+                <div className="data text-sm text-cream"><span className="md:hidden text-[10px] uppercase tracking-wider text-steel mr-1.5">Value</span>{money(m.onHand * m.unitCost)}</div>
                 <div className="md:text-right">
                   {low ? (
                     <button
                       onClick={() => updateMaterial(m.id, { onHand: m.reorderAt * 2 })}
-                      className="btn-primary text-xs py-1.5 px-3"
+                      className="btn-primary text-xs py-1.5 px-3 w-full md:w-auto"
                     >
                       <TruckIcon size={12} /> Reorder
                     </button>
@@ -72,11 +72,11 @@ export default function Materials() {
   );
 }
 
-function MiniStat({ label, value, accent = "#f2b705", small }: { label: string; value: React.ReactNode; accent?: string; small?: boolean }) {
+function MiniStat({ label, value, accent = "#f2b705", small, className }: { label: string; value: React.ReactNode; accent?: string; small?: boolean; className?: string }) {
   return (
-    <div className="card p-3.5 relative overflow-hidden">
+    <div className={`card p-3 sm:p-3.5 relative overflow-hidden ${className ?? ""}`}>
       <div className="absolute left-0 top-0 h-full w-1" style={{ background: accent }} />
-      <div className="data text-[10px] uppercase tracking-wider text-steel">{label}</div>
+      <div className="data text-[11px] sm:text-[10px] uppercase tracking-wider text-steel">{label}</div>
       <div className={`display text-cream mt-1 ${small ? "text-lg" : "text-2xl"}`}>{value}</div>
     </div>
   );

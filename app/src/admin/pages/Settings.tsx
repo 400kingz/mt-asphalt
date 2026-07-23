@@ -34,15 +34,15 @@ export default function SettingsPage() {
         <Field label="Service cities">
           <div className="flex flex-wrap gap-1.5 mb-2">
             {s.serviceCities.map((c) => (
-              <span key={c} className="chip flex items-center gap-1" style={{ background: "var(--color-surface-2)", color: "var(--color-cream)", borderColor: "var(--color-hairline)" }}>
-                {c}
-                <button onClick={() => updateSettings({ serviceCities: s.serviceCities.filter((x) => x !== c) })} className="hover:text-danger"><X size={11} /></button>
+              <span key={c} className="chip flex items-center gap-1 max-w-full" style={{ background: "var(--color-surface-2)", color: "var(--color-cream)", borderColor: "var(--color-hairline)" }}>
+                <span className="truncate">{c}</span>
+                <button onClick={() => updateSettings({ serviceCities: s.serviceCities.filter((x) => x !== c) })} className="grid place-items-center p-2 -my-2 -mr-1.5 hover:text-danger" aria-label={"Remove " + c}><X size={11} /></button>
               </span>
             ))}
           </div>
           <div className="flex gap-2">
             <input className="input" value={cityInput} onChange={(e) => setCityInput(e.target.value)} placeholder="Add a city…" onKeyDown={(e) => { if (e.key === "Enter" && cityInput.trim()) { updateSettings({ serviceCities: [...s.serviceCities, cityInput.trim()] }); setCityInput(""); } }} />
-            <button onClick={() => { if (cityInput.trim()) { updateSettings({ serviceCities: [...s.serviceCities, cityInput.trim()] }); setCityInput(""); } }} className="btn-ghost px-3"><Plus size={15} /></button>
+            <button onClick={() => { if (cityInput.trim()) { updateSettings({ serviceCities: [...s.serviceCities, cityInput.trim()] }); setCityInput(""); } }} className="btn-ghost px-3 min-w-[44px]" aria-label="Add city"><Plus size={15} /></button>
           </div>
         </Field>
       </Panel>
@@ -75,8 +75,8 @@ export default function SettingsPage() {
         <h3 className="display text-lg text-cream">Reset demo data</h3>
         <p className="text-muted text-sm mt-1">Restore all leads, jobs, invoices and settings to the original seed. Useful after exploring.</p>
         {confirmReset ? (
-          <div className="flex items-center gap-2 mt-3">
-            <button onClick={() => { resetAll(); setConfirmReset(false); }} className="btn-primary text-sm" style={{ background: "#ef4d4d", boxShadow: "0 6px 0 -1px #b91c1c" }}>
+          <div className="flex flex-col items-stretch gap-2 mt-3 sm:flex-row sm:items-center">
+            <button onClick={() => { resetAll(); setConfirmReset(false); }} className="btn-primary text-sm whitespace-nowrap" style={{ background: "#ef4d4d", boxShadow: "0 6px 0 -1px #b91c1c" }}>
               <RotateCcw size={15} /> Yes, reset everything
             </button>
             <button onClick={() => setConfirmReset(false)} className="btn-ghost text-sm">Cancel</button>
@@ -113,7 +113,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button onClick={() => onChange(!value)} className="flex items-center gap-3 w-full">
+    <button onClick={() => onChange(!value)} className="flex items-center gap-3 w-full py-2.5 -my-2.5">
       <span className="relative h-6 w-11 rounded-full transition-colors shrink-0" style={{ background: value ? "#f2b705" : "#34343a" }}>
         <span className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all" style={{ left: value ? "22px" : "2px" }} />
       </span>

@@ -52,15 +52,15 @@ export default function Schedule() {
                   {isToday && <span className="chip" style={{ background: "#f2b705", color: "#17130a", borderColor: "#f2b705" }}>Today</span>}
                 </div>
                 {w && (
-                  <div className={`flex items-center gap-1.5 data text-xs ${w.ok ? "text-steel" : "text-safety"}`}>
+                  <div className={`flex flex-wrap justify-end items-center gap-1.5 data text-xs ${w.ok ? "text-steel" : "text-safety"}`}>
                     <Icon size={16} className={w.ok ? "text-highway" : "text-safety"} />
-                    {w.label}
+                    <span className="whitespace-nowrap">{w.label}</span>
                     {!w.ok && <span className="chip ml-1" style={{ color: "#f25c05", background: "rgba(242,92,5,0.14)", borderColor: "#f25c0555" }}>Hold paving</span>}
                   </div>
                 )}
               </div>
               {jobs.length === 0 ? (
-                <div className="data text-[11px] text-steel-dim pl-14">— open day —</div>
+                <div className="data text-[11px] text-steel-dim pl-0 sm:pl-14">— open day —</div>
               ) : (
                 <div className="space-y-2 pl-0 sm:pl-14">
                   {jobs.map((j) => (
@@ -75,13 +75,14 @@ export default function Schedule() {
                           <span className="flex items-center gap-1"><MapPin size={10} /> {j.city}</span>
                           <span>{j.sqft.toLocaleString()} sq ft</span>
                           <span className="text-highway">{money(j.value)}</span>
+                          <span className="lg:hidden truncate">{j.crewIds.map((cid) => db.crew.find((x) => x.id === cid)?.name.split(" ")[0]).filter(Boolean).join(", ")}</span>
                         </div>
                       </div>
-                      <div className="flex -space-x-1.5">
+                      <div className="flex -space-x-2 lg:-space-x-1.5">
                         {j.crewIds.slice(0, 3).map((cid) => {
                           const c = db.crew.find((x) => x.id === cid);
                           return (
-                            <span key={cid} className="h-6 w-6 rounded-full grid place-items-center data text-[8px] font-bold border border-surface-2" style={{ background: "#242428", color: "#f2b705" }} title={c?.name}>
+                            <span key={cid} className="h-8 w-8 lg:h-6 lg:w-6 rounded-full grid place-items-center data text-[10px] lg:text-[8px] font-bold border border-surface-2" style={{ background: "#242428", color: "#f2b705" }} title={c?.name}>
                               {c?.initials}
                             </span>
                           );
@@ -97,7 +98,7 @@ export default function Schedule() {
       </div>
 
       {/* Crew roster */}
-      <div className="space-y-4">
+      <div className="space-y-4 order-first lg:order-none">
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-3">
             <HardHat size={16} className="text-highway" />

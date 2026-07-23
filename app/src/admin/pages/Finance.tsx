@@ -37,6 +37,8 @@ export default function Finance() {
   const servicePie = Object.entries(byService)
     .map(([name, value]) => ({ name, value: Math.round(value) }))
     .sort((a, b) => b.value - a.value);
+  const rest = servicePie.slice(5);
+  const restTotal = rest.reduce((s, r) => s + r.value, 0);
 
   // profit series
   const profitSeries = revenue.map((r) => ({ month: r.month, profit: r.revenue - r.expenses }));
@@ -55,7 +57,7 @@ export default function Finance() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label="Revenue (12 mo)" value={compactMoney(ytd)} accent="#4ec27a" icon={<TrendingUp size={18} />} sub="trailing year" />
+        <StatTile label="Revenue" value={compactMoney(ytd)} accent="#4ec27a" icon={<TrendingUp size={18} />} sub="trailing year" />
         <StatTile label="Net profit" value={compactMoney(profit)} accent="#f2b705" icon={<DollarSign size={18} />} sub={`${marginPct}% margin`} />
         <StatTile label="Avg. job value" value={money(avgJob)} accent="#5b9bd5" icon={<Percent size={18} />} sub={`${jobs.length} jobs`} />
         <StatTile label="Receivables" value={compactMoney(aging.current + aging.d30 + aging.d60)} accent={aging.d30 + aging.d60 > 0 ? "#f25c05" : "#8a97a0"} icon={<Clock size={18} />} sub={`${unpaid.length} open invoices`} />
@@ -107,6 +109,13 @@ export default function Finance() {
                 <span className="data text-steel">{money(s.value)}</span>
               </div>
             ))}
+            {rest.length > 0 && (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "#8a97a0" }} />
+                <span className="text-muted flex-1 truncate">+{rest.length} more</span>
+                <span className="data text-steel">{money(restTotal)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -123,9 +132,9 @@ export default function Finance() {
           ].map(([label, amt, color, hint]) => (
             <div key={label as string} className="card bg-surface-2 p-4 relative overflow-hidden">
               <div className="absolute left-0 top-0 h-full w-1" style={{ background: color as string }} />
-              <div className="data text-[10px] text-steel uppercase">{label as string}</div>
+              <div className="data text-[11px] lg:text-[10px] text-steel uppercase">{label as string}</div>
               <div className="display text-2xl mt-1" style={{ color: color as string }}>{money(amt as number)}</div>
-              <div className="data text-[10px] text-steel-dim mt-0.5">{hint as string}</div>
+              <div className="data text-[11px] lg:text-[10px] text-steel-dim mt-0.5">{hint as string}</div>
             </div>
           ))}
         </div>
