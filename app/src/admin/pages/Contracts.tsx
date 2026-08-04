@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Printer, X, FileSignature, PenLine, ArrowRight } from "lucide-react";
+import { Printer, X, FileSignature, PenLine, ArrowRight, Plus, Trash2 } from "lucide-react";
 import { useStore } from "../../lib/store";
 import { StatusPill, EmptyState } from "../../components/ui";
 import { contractStatusStyle } from "../../lib/status";
-import { money, dateShort, today } from "../../lib/format";
+import { money, dateShort, today, uid } from "../../lib/format";
 import { LogoMark } from "../../components/Logo";
 import type { Contract, ContractStatus } from "../../lib/types";
 
@@ -18,20 +18,24 @@ const NEXT: Record<ContractStatus, ContractStatus | null> = {
 export default function Contracts() {
   const { db, updateContract } = useStore();
   const [preview, setPreview] = useState<Contract | null>(null);
+  const [building, setBuilding] = useState(false);
 
   const totalValue = db.contracts.reduce((s, c) => s + c.totalAmount, 0);
   const active = db.contracts.filter((c) => c.status === "signed" || c.status === "active");
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MiniStat label="Contracts" value={db.contracts.length} />
         <MiniStat label="Active value" value={money(active.reduce((s, c) => s + c.totalAmount, 0))} small />
-        <MiniStat label="Total booked" value={money(totalValue)} small className="col-span-2 sm:col-span-1 order-last sm:order-none" />
+        <MiniStat label="Total booked" value={money(totalValue)} small />
+        <button onClick={() => setBuilding(true)} className="btn-primary text-sm justify-center col-span-2 md:col-span-1">
+          <Plus size={16} /> New contract
+        </button>
       </div>
 
       {db.contracts.length === 0 ? (
-        <EmptyState icon={<FileSignature size={32} />} title="No contracts yet" />
+        <EmptyState icon={<FileSignature size={32} />} title="No contracts yet" hint="Create one with the New contract button." />
       ) : (
         <div className="grid md:grid-cols-2 gap-3">
           {db.contracts.map((c) => {
@@ -75,14 +79,188 @@ export default function Contracts() {
       )}
 
       {preview && <ContractPreview contract={preview} onClose={() => setPreview(null)} />}
+      {building && <ContractBuilder onClose={() => setBuilding(false)} onCreated={(c) => { setBuilding(false); setPreview(c); }} />}
     </div>
   );
+}
+
+/* ---------- Contract builder ---------- */
+const SCHEDULE_PRESETS = [
+  "50% deposit, 50% upon completion",
+  "1/3 deposit · 1/3 at mobilization · 1/3 at completion",
+  "Completion only",
+  "Net 30",
+];
+
+function ContractBuilder({ onClose, onCreated }: { onClose: () => void; onCreated: (c: Contract) => void }) {
+  const { db, addContract } = useStore();
+  const nextSeq =
+    Math.max(0, ...db.contracts.map((c) => parseInt(c.number.split("-").pop() ?? "0", 10) || 0)) + 1;
+  const nextNum = `CON-${today.format("YYYY")}-${String(nextSeq).padStart(3, "0")}`;
+
+  const [customerName, setCustomerName] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
+  const [scopeItems, setScopeItems] = useState<string[]>([]);
+  const [customScope, setCustomScope] = useState("");
+  const [totalAmount, setTotalAmount] = useState<number>(0);
+  const [paymentSchedule, setPaymentSchedule] = useState(db.settings.defaultPaymentTerms);
+  const [warrantyText, setWarrantyText] = useState(db.settings.warrantyText);
+
+  const toggleScope = (name: string) =>
+    setScopeItems((arr) => (arr.includes(name) ? arr.filter((x) => x !== name) : [...arr, name]));
+
+  const addCustomScope = () => {
+    const v = customScope.trim();
+    if (v && !scopeItems.includes(v)) setScopeItems((arr) => [...arr, v]);
+    setCustomScope("");
+  };
+
+  const milestones = paymentMilestones(paymentSchedule, totalAmount);
+
+  const create = () => {
+    const c: Contract = {
+      id: uid("con"),
+      number: nextNum,
+      customerName: customerName || "New customer",
+      customerAddress,
+      projectDescription: projectDescription || scopeItems.join(", "),
+      scopeItems,
+      totalAmount,
+      paymentSchedule,
+      warrantyText,
+      status: "draft",
+      createdAt: today.format("YYYY-MM-DD"),
+    };
+    addContract(c);
+    onCreated(c);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 fadein" />
+      <div className="relative w-full max-w-lg bg-surface border-l border-hairline h-full overflow-y-auto rise" style={{ animationDuration: "0.3s" }} onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-surface/95 backdrop-blur border-b border-hairline p-4 flex items-center justify-between z-10">
+          <div>
+            <div className="data text-[11px] text-steel">New contract</div>
+            <h3 className="display text-lg text-cream">{nextNum}</h3>
+          </div>
+          <button onClick={onClose} className="grid h-11 w-11 md:h-9 md:w-9 place-items-center rounded-lg card"><X size={16} /></button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-1 gap-3">
+            <L label="Customer name"><input className="input" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Sunridge HOA" /></L>
+            <L label="Customer address"><input className="input" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} placeholder="2400 Sunridge Dr, Santa Ana, CA" /></L>
+          </div>
+
+          <L label="Project description">
+            <textarea className="input min-h-[90px] resize-y" value={projectDescription} onChange={(e) => setProjectDescription(e.target.value)} placeholder="Describe the job — e.g. 2&quot; overlay across 22,000 sq ft of private access road, mill transitions, compaction, edge sealing." />
+          </L>
+
+          <div>
+            <span className="field-label">Scope of work</span>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {db.services.filter((s) => s.active).map((s) => {
+                const on = scopeItems.includes(s.name);
+                return (
+                  <button key={s.id} type="button" onClick={() => toggleScope(s.name)} className="chip cursor-pointer" style={on ? { background: "#f2b705", color: "#17130a", borderColor: "#f2b705" } : { background: "var(--color-surface-2)", color: "var(--color-muted)", borderColor: "var(--color-hairline)" }}>
+                    {s.name}
+                  </button>
+                );
+              })}
+            </div>
+            {scopeItems.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {scopeItems.map((s) => (
+                  <span key={s} className="chip" style={{ background: "var(--color-surface-2)", color: "var(--color-cream)", borderColor: "var(--color-hairline)" }}>
+                    {s}
+                    <button type="button" onClick={() => toggleScope(s)} className="ml-1 text-steel-dim hover:text-danger" aria-label={`Remove ${s}`}><X size={11} /></button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 mt-2">
+              <input className="input py-1.5 text-sm flex-1" value={customScope} onChange={(e) => setCustomScope(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomScope())} placeholder="Custom scope item…" />
+              <button type="button" onClick={addCustomScope} className="btn-ghost text-xs px-3"><Plus size={13} /> Add</button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <L label="Total contract amount ($)"><input className="input data" type="number" min={0} value={totalAmount || ""} onChange={(e) => setTotalAmount(Number(e.target.value))} placeholder="41500" /></L>
+            <L label="Payment schedule">
+              <select className="input" value={SCHEDULE_PRESETS.includes(paymentSchedule) ? paymentSchedule : "__custom"} onChange={(e) => { if (e.target.value !== "__custom") setPaymentSchedule(e.target.value); }}>
+                {SCHEDULE_PRESETS.map((p) => <option key={p} value={p}>{p}</option>)}
+                <option value="__custom">Custom…</option>
+              </select>
+            </L>
+          </div>
+          {!SCHEDULE_PRESETS.includes(paymentSchedule) && (
+            <L label="Custom payment schedule"><input className="input" value={paymentSchedule} onChange={(e) => setPaymentSchedule(e.target.value)} placeholder="e.g. 25% deposit · 75% on completion" /></L>
+          )}
+
+          <L label="Warranty text">
+            <textarea className="input min-h-[60px] resize-y" value={warrantyText} onChange={(e) => setWarrantyText(e.target.value)} />
+          </L>
+
+          {totalAmount > 0 && milestones.length > 0 && (
+            <div className="card p-3 bg-surface-2 space-y-1 data text-sm">
+              <div className="data text-[10px] uppercase tracking-wider text-steel mb-1">Payment milestones</div>
+              {milestones.map((m) => (
+                <div key={m.label} className="flex justify-between text-steel"><span>{m.label}</span><span className="text-cream">{money(m.amount)}</span></div>
+              ))}
+              <div className="flex justify-between text-cream font-bold pt-1 border-t border-hairline mt-1"><span>Total</span><span className="text-highway">{money(totalAmount)}</span></div>
+            </div>
+          )}
+        </div>
+
+        <div className="sticky bottom-0 bg-surface/95 backdrop-blur border-t border-hairline p-4 flex gap-2">
+          <button onClick={onClose} className="btn-ghost flex-1 text-sm">Cancel</button>
+          <button onClick={create} className="btn-primary flex-1 text-sm">Create & preview</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function L({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="field-label">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+/** Break a payment-schedule string into labeled milestones with amounts. */
+function paymentMilestones(schedule: string, total: number): { label: string; amount: number }[] {
+  const s = schedule.toLowerCase();
+  if (total <= 0) return [];
+  if (s.includes("1/3")) {
+    const third = Math.round((total / 3) * 100) / 100;
+    return [
+      { label: "Deposit at signing", amount: third },
+      { label: "Due at mobilization", amount: third },
+      { label: "Due on completion", amount: Math.round((total - third * 2) * 100) / 100 },
+    ];
+  }
+  if (s.includes("50%")) {
+    const half = Math.round((total / 2) * 100) / 100;
+    return [
+      { label: "Deposit due at signing", amount: half },
+      { label: "Balance on completion", amount: Math.round((total - half) * 100) / 100 },
+    ];
+  }
+  if (s.includes("completion only") || s.includes("100%")) {
+    return [{ label: "Due on completion", amount: total }];
+  }
+  return [];
 }
 
 function ContractPreview({ contract, onClose }: { contract: Contract; onClose: () => void }) {
   const { db } = useStore();
   const s = db.settings;
-  const half = contract.totalAmount / 2;
+  const milestones = paymentMilestones(contract.paymentSchedule, contract.totalAmount);
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 flex items-start justify-center p-3 md:p-8 print-root" onClick={onClose}>
       <div className="w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
@@ -127,7 +305,13 @@ function ContractPreview({ contract, onClose }: { contract: Contract; onClose: (
             <Section title="2 · Contract Price & Payment">
               <div className="flex justify-between border-b border-neutral-200 py-1.5"><span className="text-neutral-600">Total contract amount</span><span className="data font-bold">{money(contract.totalAmount)}</span></div>
               <div className="flex justify-between py-1.5 text-neutral-600"><span>Payment schedule</span><span className="data text-right">{contract.paymentSchedule}</span></div>
-              <div className="data text-[11px] text-neutral-500 mt-1"><span className="whitespace-nowrap">Deposit due at signing: {money(half)}</span> · <span className="whitespace-nowrap">Balance on completion: {money(half)}</span></div>
+              {milestones.length > 0 && (
+                <div className="data text-[11px] text-neutral-500 mt-1 flex flex-wrap gap-x-1">
+                  {milestones.map((m, i) => (
+                    <span key={m.label} className="whitespace-nowrap">{i > 0 && "· "}{m.label}: {money(m.amount)}</span>
+                  ))}
+                </div>
+              )}
             </Section>
 
             <Section title="3 · Warranty & Terms">

@@ -169,14 +169,29 @@ function InvoicePreview({ invoice, onClose }: { invoice: Invoice; onClose: () =>
                 <div className="font-bold">{invoice.customerName}</div>
                 <div className="text-neutral-600 whitespace-pre-line">{invoice.customerAddress}</div>
                 <div className="text-neutral-600 break-words">{invoice.customerEmail}</div>
+                {invoice.customerPhone && <div className="text-neutral-600">{invoice.customerPhone}</div>}
                 <div className="mt-2 data text-[11px] text-neutral-500">
                   Issued {dateShort(invoice.issuedDate)} · Due {dateShort(invoice.dueDate)}
                 </div>
               </div>
             </div>
 
-            {invoice.jobSiteAddress && (
-              <div className="mt-4 data text-[11px] text-neutral-500">Job site: {invoice.jobSiteAddress}</div>
+            {(invoice.jobSiteAddress || invoice.projectType || invoice.sqft || (invoice.serviceTypes && invoice.serviceTypes.length > 0)) && (
+              <div className="mt-4 rounded border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-[12px]">
+                <div className="data text-[10px] uppercase tracking-wider text-neutral-400 mb-1">Job details</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0.5 text-neutral-600">
+                  {invoice.jobSiteAddress && <div><span className="text-neutral-400">Job site: </span>{invoice.jobSiteAddress}</div>}
+                  {invoice.projectType && <div><span className="text-neutral-400">Project type: </span>{invoice.projectType}</div>}
+                  {invoice.sqft ? <div><span className="text-neutral-400">Area: </span><span className="data">{invoice.sqft.toLocaleString()} sq ft</span></div> : null}
+                </div>
+                {invoice.serviceTypes && invoice.serviceTypes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {invoice.serviceTypes.map((s) => (
+                      <span key={s} className="data text-[11px] px-2 py-0.5 rounded border border-neutral-300 text-neutral-600">{s}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             <div className="overflow-x-auto mt-5">
@@ -205,7 +220,7 @@ function InvoicePreview({ invoice, onClose }: { invoice: Invoice; onClose: () =>
             <div className="flex justify-end mt-4">
               <div className="w-56 space-y-1.5 text-sm">
                 <Row k="Subtotal" v={money(subtotal)} />
-                <Row k={`Tax (${(invoice.taxRate * 100).toFixed(2)}%)`} v={money(tax)} />
+                {invoice.taxRate > 0 && <Row k={`Tax (${(invoice.taxRate * 100).toFixed(2)}%)`} v={money(tax)} />}
                 <div className="flex justify-between pt-2 mt-1 border-t-2" style={{ borderColor: "#0f0f11" }}>
                   <span className="display text-lg">Total</span>
                   <span className="display text-lg" style={{ color: "#0f0f11" }}>{money(total)}</span>
@@ -244,23 +259,70 @@ function Row({ k, v }: { k: string; v: string }) {
 }
 
 /* ---------- Invoice builder ---------- */
+const PROJECT_TYPES = [
+  "New installation",
+  "Resurfacing/overlay",
+  "Sealcoating",
+  "Repair/patching",
+  "Striping",
+  "Driveway",
+  "Parking lot",
+  "Commercial",
+  "Residential",
+  "Other",
+];
+
 function InvoiceBuilder({ onClose, onCreated }: { onClose: () => void; onCreated: (inv: Invoice) => void }) {
   const { db, addInvoice } = useStore();
   // Next number = highest existing sequence + 1 (robust to any history)
   const nextSeq =
     Math.max(0, ...db.invoices.map((i) => parseInt(i.number.split("-").pop() ?? "0", 10) || 0)) + 1;
-  const nextNum = `INV-2026-${String(nextSeq).padStart(3, "0")}`;
+  const nextNum = `INV-${today.format("YYYY")}-${String(nextSeq).padStart(3, "0")}`;
   const [customerName, setCustomerName] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [jobSite, setJobSite] = useState("");
+  const [projectType, setProjectType] = useState("");
+  const [sqft, setSqft] = useState<number | "">("");
+  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
+  const [notes, setNotes] = useState("");
   const [terms, setTerms] = useState(db.settings.defaultPaymentTerms);
+  const [dueDate, setDueDate] = useState(today.add(30, "day").format("YYYY-MM-DD"));
+  const [applyTax, setApplyTax] = useState(false);
   const [items, setItems] = useState<LineItem[]>([{ id: uid("li"), description: "", qty: 1, unit: "job", rate: 0 }]);
 
   const setItem = (id: string, patch: Partial<LineItem>) =>
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, ...patch } : i)));
   const subtotal = invoiceSubtotal(items);
-  const tax = subtotal * db.settings.salesTaxRate;
+  const tax = applyTax ? subtotal * db.settings.salesTaxRate : 0;
+
+  // Checking a service pre-fills a line item from it (per questionnaire spec);
+  // unchecking removes it only while it's untouched (rate still 0).
+  const toggleService = (name: string) => {
+    if (serviceTypes.includes(name)) {
+      setServiceTypes((arr) => arr.filter((x) => x !== name));
+      setItems((arr) => {
+        const rest = arr.filter((i) => !(i.description === name && i.rate === 0));
+        return rest.length ? rest : [{ id: uid("li"), description: "", qty: 1, unit: "job", rate: 0 }];
+      });
+    } else {
+      setServiceTypes((arr) => [...arr, name]);
+      setItems((arr) => {
+        if (arr.some((i) => i.description === name)) return arr;
+        const line: LineItem = {
+          id: uid("li"),
+          description: name,
+          qty: typeof sqft === "number" && sqft > 0 ? sqft : 1,
+          unit: typeof sqft === "number" && sqft > 0 ? "sq ft" : "job",
+          rate: 0,
+        };
+        // Drop untouched placeholder rows, keep anything Michael already typed.
+        const kept = arr.filter((i) => i.description || i.rate !== 0);
+        return [...kept, line];
+      });
+    }
+  };
 
   const create = () => {
     const inv: Invoice = {
@@ -269,14 +331,18 @@ function InvoiceBuilder({ onClose, onCreated }: { onClose: () => void; onCreated
       customerName: customerName || "New customer",
       customerAddress,
       customerEmail,
+      customerPhone,
       jobSiteAddress: jobSite,
+      projectType,
+      sqft: typeof sqft === "number" && sqft > 0 ? sqft : undefined,
+      serviceTypes,
       lineItems: items.filter((i) => i.description),
-      taxRate: db.settings.salesTaxRate,
-      notes: "",
+      taxRate: applyTax ? db.settings.salesTaxRate : 0,
+      notes,
       paymentTerms: terms,
       status: "draft",
       issuedDate: today.format("YYYY-MM-DD"),
-      dueDate: today.add(30, "day").format("YYYY-MM-DD"),
+      dueDate,
     };
     addInvoice(inv);
     onCreated(inv);
@@ -300,7 +366,37 @@ function InvoiceBuilder({ onClose, onCreated }: { onClose: () => void; onCreated
             <L label="Billing address"><input className="input" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} placeholder="123 Main St, Anaheim, CA" /></L>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <L label="Email"><input className="input" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="ap@acme.com" /></L>
+              <L label="Phone"><input className="input" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="(714) 555-0100" /></L>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-hairline">
+            <div className="data text-[10px] uppercase tracking-wider text-steel mb-2">Job details</div>
+            <div className="grid grid-cols-1 gap-3">
               <L label="Job site"><input className="input" value={jobSite} onChange={(e) => setJobSite(e.target.value)} placeholder="Same as billing" /></L>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <L label="Project type">
+                  <select className="input" value={projectType} onChange={(e) => setProjectType(e.target.value)}>
+                    <option value="">Select…</option>
+                    {PROJECT_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </L>
+                <L label="Square footage"><input className="input data" type="number" min={0} value={sqft} onChange={(e) => setSqft(e.target.value === "" ? "" : Number(e.target.value))} placeholder="12,000" /></L>
+              </div>
+              <div>
+                <span className="field-label">Services</span>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {db.services.filter((s) => s.active).map((s) => {
+                    const on = serviceTypes.includes(s.name);
+                    return (
+                      <button key={s.id} type="button" onClick={() => toggleService(s.name)} className="chip cursor-pointer" style={on ? { background: "#f2b705", color: "#17130a", borderColor: "#f2b705" } : { background: "var(--color-surface-2)", color: "var(--color-muted)", borderColor: "var(--color-hairline)" }}>
+                        {s.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-steel-dim mt-1.5">Checking a service adds a pre-filled line item below.</p>
+              </div>
             </div>
           </div>
 
@@ -327,11 +423,21 @@ function InvoiceBuilder({ onClose, onCreated }: { onClose: () => void; onCreated
             </div>
           </div>
 
-          <L label="Payment terms"><input className="input" value={terms} onChange={(e) => setTerms(e.target.value)} /></L>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <L label="Payment terms"><input className="input" value={terms} onChange={(e) => setTerms(e.target.value)} /></L>
+            <L label="Due date"><input className="input data" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></L>
+          </div>
+
+          <L label="Notes / special terms"><textarea className="input min-h-[60px] resize-y" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="After-hours work, access instructions, thank-you note…" /></L>
+
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" checked={applyTax} onChange={(e) => setApplyTax(e.target.checked)} className="h-4 w-4 rounded border-neutral-500 accent-highway" />
+            <span className="field-label mb-0">Apply tax ({(db.settings.salesTaxRate * 100).toFixed(2)}% CA)</span>
+          </label>
 
           <div className="card p-3 bg-surface-2 space-y-1 data text-sm">
             <div className="flex justify-between text-steel"><span>Subtotal</span><span>{money(subtotal)}</span></div>
-            <div className="flex justify-between text-steel"><span>Tax ({(db.settings.salesTaxRate * 100).toFixed(2)}%)</span><span>{money(tax)}</span></div>
+            {applyTax && <div className="flex justify-between text-steel"><span>Tax ({(db.settings.salesTaxRate * 100).toFixed(2)}%)</span><span>{money(tax)}</span></div>}
             <div className="flex justify-between text-cream font-bold pt-1 border-t border-hairline mt-1"><span>Total</span><span className="text-highway">{money(subtotal + tax)}</span></div>
           </div>
         </div>
