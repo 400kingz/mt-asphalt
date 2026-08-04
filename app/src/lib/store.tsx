@@ -26,9 +26,23 @@ const KEY = "mt-asphalt-db-v1";
 const AUTH_KEY = "mt-asphalt-auth-v1";
 
 // Optional backend tier. When VITE_API_URL is set (e.g. http://localhost:8787),
-// the store hydrates from and syncs to the Node REST server; otherwise it runs
-// entirely on localStorage. Component code is identical either way.
+// the store hydrates from and syncs to the Node REST server. Otherwise it uses
+// the built-in Vercel Blob endpoint (/api/data) as a cloud backup, while still
+// keeping localStorage as the instant, offline-first copy. Component code is
+// identical either way.
 const API = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "");
+
+// Attaches the dashboard session token (set by useAuth's login) to requests
+// against /api/data, which requires it. Returns {} when logged out — the
+// fetch then gets a 401 and the caller falls back to the local copy.
+function authHeaders(): Record<string, string> {
+  try {
+    const token = sessionStorage.getItem(AUTH_KEY);
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
 
 function load(): Database {
   try {
@@ -73,32 +87,87 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [db, setDb] = useState<Database>(load);
   const hydrated = useRef(false);
 
-  // Hydrate from the API server on first mount, if configured.
+  // Hydrate from the backend on first mount.
+  // 1. If VITE_API_URL is set, prefer that REST server.
+  // 2. Otherwise try the built-in Vercel Blob endpoint (/api/data).
+  // 3. Always merge the serverless lead inbox (/api/leads) last so new website
+  //    estimate requests appear regardless of which backend is in use.
+  // If every fetch fails, the localStorage/seed copy already in state is used.
   useEffect(() => {
-    if (!API) {
-      hydrated.current = true;
-      return;
-    }
     let cancelled = false;
     (async () => {
+      let nextDb = db;
       try {
-        const res = await fetch(`${API}/api/db`);
-        const remote = await res.json();
-        if (!cancelled && remote && remote.settings) {
-          setDb(remote as Database);
-        } else if (!cancelled) {
-          // Server is empty — seed it with our current data.
-          fetch(`${API}/api/db`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(db),
-          }).catch(() => {});
+        if (API) {
+          const res = await fetch(`${API}/api/db`);
+          const remote = await res.json();
+          if (remote && remote.settings) {
+            nextDb = remote as Database;
+          } else {
+            // Server is empty — seed it with our current data.
+            fetch(`${API}/api/db`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(nextDb),
+            }).catch(() => {});
+          }
+        } else {
+          // /api/data holds customers, invoices and revenue, not just public
+          // content — it requires the same session token as the dashboard
+          // login. A logged-out visitor (e.g. the public marketing site) gets
+          // 401 here and silently keeps the local seed/localStorage copy.
+          const res = await fetch("/api/data", { headers: { ...authHeaders(), accept: "application/json" } });
+          if (res.ok) {
+            const remote = await res.json();
+            if (remote && remote.settings) {
+              nextDb = remote as Database;
+            } else {
+              // Blob is empty — seed it with our current data.
+              fetch("/api/data", {
+                method: "PUT",
+                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                body: JSON.stringify(nextDb),
+              }).catch(() => {});
+            }
+          }
         }
       } catch {
-        /* offline — fall back to localStorage copy already in state */
-      } finally {
-        hydrated.current = true;
+        /* offline or backend down — use localStorage copy already in state */
       }
+
+      // Pull the serverless lead inbox and merge any leads this browser hasn't seen.
+      try {
+        const res = await fetch("/api/leads", { headers: { accept: "application/json" } });
+        if (!res.ok || !res.headers.get("content-type")?.includes("json")) return;
+        const remote = (await res.json()) as Partial<Lead>[];
+        if (!Array.isArray(remote) || remote.length === 0) return;
+        const known = new Set(nextDb.leads.map((l) => l.id));
+        const fresh: Lead[] = remote
+          .filter((l) => l && typeof l.id === "string" && !known.has(l.id))
+          .map((l) => ({
+            id: l.id!,
+            name: l.name ?? "Unknown",
+            phone: l.phone ?? "",
+            email: l.email ?? "",
+            address: l.address ?? "",
+            city: l.city ?? "",
+            serviceInterest: l.serviceInterest ?? "General inquiry",
+            message: l.message ?? "",
+            status: l.status ?? "new",
+            source: l.source ?? "website",
+            createdAt: l.createdAt ?? new Date().toISOString(),
+            estSqft: l.estSqft,
+            value: l.value,
+          }));
+        if (fresh.length > 0) {
+          nextDb = { ...nextDb, leads: [...fresh, ...nextDb.leads] };
+        }
+      } catch {
+        /* local dev or offline — dashboard still works from local data */
+      }
+
+      if (!cancelled) setDb(nextDb);
+      hydrated.current = true;
     })();
     return () => {
       cancelled = true;
@@ -106,56 +175,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pull the serverless lead inbox (/api/leads on Vercel) and merge any leads
-  // this browser hasn't seen — website estimate requests reach the dashboard
-  // from any device this way.
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/leads", { headers: { accept: "application/json" } });
-        if (!res.ok || !res.headers.get("content-type")?.includes("json")) return;
-        const remote = (await res.json()) as Partial<Lead>[];
-        if (!Array.isArray(remote) || remote.length === 0) return;
-        setDb((d) => {
-          const known = new Set(d.leads.map((l) => l.id));
-          const fresh: Lead[] = remote
-            .filter((l) => l && typeof l.id === "string" && !known.has(l.id))
-            .map((l) => ({
-              id: l.id!,
-              name: l.name ?? "Unknown",
-              phone: l.phone ?? "",
-              email: l.email ?? "",
-              address: l.address ?? "",
-              city: l.city ?? "",
-              serviceInterest: l.serviceInterest ?? "General inquiry",
-              message: l.message ?? "",
-              status: l.status ?? "new",
-              source: l.source ?? "website",
-              createdAt: l.createdAt ?? new Date().toISOString(),
-              estSqft: l.estSqft,
-              value: l.value,
-            }));
-          if (fresh.length === 0) return d;
-          return { ...d, leads: [...fresh, ...d.leads] };
-        });
-      } catch {
-        /* local dev or offline — dashboard still works from local data */
-      }
-    })();
-  }, []);
-
-  // Persist: always to localStorage; debounced to the API when configured.
+  // Persist: always to localStorage immediately; debounced to the backend when available.
   useEffect(() => {
     try {
       localStorage.setItem(KEY, JSON.stringify(db));
     } catch {
       /* quota — ignore */
     }
-    if (!API || !hydrated.current) return;
+    if (!hydrated.current) return;
+    const url = API ? `${API}/api/db` : "/api/data";
     const t = setTimeout(() => {
-      fetch(`${API}/api/db`, {
+      fetch(url, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...(API ? {} : authHeaders()), "Content-Type": "application/json" },
         body: JSON.stringify(db),
       }).catch(() => {});
     }, 500);
