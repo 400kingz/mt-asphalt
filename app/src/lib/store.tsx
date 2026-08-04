@@ -23,7 +23,7 @@ import { seed } from "./seed";
    ============================================================ */
 
 const KEY = "mt-asphalt-db-v1";
-const AUTH_KEY = "mt-asphalt-auth-v1";
+export const AUTH_KEY = "mt-asphalt-auth-v1";
 
 // Optional backend tier. When VITE_API_URL is set (e.g. http://localhost:8787),
 // the store hydrates from and syncs to the Node REST server; otherwise it runs
@@ -219,27 +219,60 @@ export function useStore() {
   return ctx;
 }
 
-/* ---- lightweight auth (local, single-owner) ---- */
+/* ---- lightweight auth (server-verified, single-owner) ---- */
 export function useAuth() {
   const [authed, setAuthed] = useState<boolean>(() => {
     try {
-      return sessionStorage.getItem(AUTH_KEY) === "1";
+      return Boolean(sessionStorage.getItem(AUTH_KEY));
     } catch {
       return false;
     }
   });
-  const login = (password: string) => {
-    // Demo gate — any non-empty password unlocks Michael's console.
-    if (password.trim().length > 0) {
-      sessionStorage.setItem(AUTH_KEY, "1");
-      setAuthed(true);
-      return true;
+
+  const login = async (password: string): Promise<boolean> => {
+    const trimmed = password.trim();
+    if (trimmed.length === 0) return false;
+
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: trimmed }),
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as { token?: string };
+        if (data.token) {
+          sessionStorage.setItem(AUTH_KEY, data.token);
+          setAuthed(true);
+          return true;
+        }
+      }
+
+      // The server is reachable and explicitly rejected the password (or
+      // returned something unexpected) — never treat that as success.
+      if (!import.meta.env.DEV) return false;
+
+      // Missing /api routes are expected under plain `vite` dev (the Vercel
+      // functions aren't served there) — fall back so local dev isn't
+      // blocked. This branch is compiled out of production builds.
+      // eslint-disable-next-line no-console
+      console.warn("[mt-asphalt-auth] Auth endpoint unreachable; using dev fallback.");
+    } catch {
+      if (!import.meta.env.DEV) return false;
+      // eslint-disable-next-line no-console
+      console.warn("[mt-asphalt-auth] Auth endpoint unreachable; using dev fallback.");
     }
-    return false;
+
+    sessionStorage.setItem(AUTH_KEY, "dev-fallback-token");
+    setAuthed(true);
+    return true;
   };
+
   const logout = () => {
     sessionStorage.removeItem(AUTH_KEY);
     setAuthed(false);
   };
+
   return { authed, login, logout };
 }

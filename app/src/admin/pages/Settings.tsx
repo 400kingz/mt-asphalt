@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Building2, Phone, ShieldCheck, DollarSign, MapPin, RotateCcw, X, Plus } from "lucide-react";
-import { useStore } from "../../lib/store";
+import { Building2, Phone, ShieldCheck, DollarSign, MapPin, RotateCcw, X, Plus, Lock } from "lucide-react";
+import { useStore, AUTH_KEY } from "../../lib/store";
 
 export default function SettingsPage() {
   const { db, updateSettings, resetAll } = useStore();
@@ -70,6 +70,9 @@ export default function SettingsPage() {
         <Field label="Warranty text"><input className="input" value={s.warrantyText} onChange={(e) => updateSettings({ warrantyText: e.target.value })} /></Field>
       </Panel>
 
+      {/* Change password */}
+      <ChangePasswordPanel />
+
       {/* Danger zone */}
       <div className="card p-5 border-danger/30">
         <h3 className="display text-lg text-cream">Reset demo data</h3>
@@ -86,6 +89,88 @@ export default function SettingsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function ChangePasswordPanel() {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const resetForm = () => {
+    setCurrent("");
+    setNext("");
+    setConfirm("");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFeedback(null);
+
+    if (next.length < 6) {
+      setFeedback({ type: "error", message: "New password must be at least 6 characters." });
+      return;
+    }
+    if (next !== confirm) {
+      setFeedback({ type: "error", message: "New password and confirmation do not match." });
+      return;
+    }
+
+    const token = sessionStorage.getItem(AUTH_KEY);
+    if (!token) {
+      setFeedback({ type: "error", message: "You are signed out. Please sign in again." });
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await fetch("/api/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, currentPassword: current, newPassword: next }),
+      });
+
+      if (res.ok) {
+        setFeedback({ type: "success", message: "Password changed successfully." });
+        resetForm();
+      } else {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setFeedback({ type: "error", message: data.error || "Current password is incorrect. Please try again." });
+      }
+    } catch {
+      setFeedback({ type: "error", message: "Could not reach the server. Please try again." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Panel icon={<Lock size={16} />} title="Change password" hint="Update the dashboard sign-in password.">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Current password">
+            <input type="password" className="input" value={current} onChange={(e) => setCurrent(e.target.value)} placeholder="Enter current password" autoComplete="current-password" />
+          </Field>
+          <div />
+          <Field label="New password">
+            <input type="password" className="input" value={next} onChange={(e) => setNext(e.target.value)} placeholder="At least 6 characters" autoComplete="new-password" />
+          </Field>
+          <Field label="Confirm new password">
+            <input type="password" className="input" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Re-enter new password" autoComplete="new-password" />
+          </Field>
+        </div>
+        {feedback && (
+          <div className={`text-sm ${feedback.type === "success" ? "text-ok" : "text-danger"}`}>
+            {feedback.message}
+          </div>
+        )}
+        <button type="submit" disabled={busy || !current || !next || !confirm} className="btn-primary text-sm disabled:opacity-60">
+          {busy ? "Updating…" : "Update password"}
+        </button>
+      </form>
+    </Panel>
   );
 }
 

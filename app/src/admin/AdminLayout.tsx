@@ -228,9 +228,10 @@ export default function AdminLayout() {
 }
 
 /* ---------------- Login gate ---------------- */
-function Login({ onLogin, company }: { onLogin: (p: string) => boolean; company: string }) {
+function Login({ onLogin, company }: { onLogin: (p: string) => Promise<boolean>; company: string }) {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState(false);
+  const [busy, setBusy] = useState(false);
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-asphalt">
       {/* brand side */}
@@ -271,9 +272,12 @@ function Login({ onLogin, company }: { onLogin: (p: string) => boolean; company:
             <p className="text-muted text-sm mt-1">Sign in to your operations dashboard.</p>
             <form
               className="mt-6 space-y-4"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                if (!onLogin(pw)) setErr(true);
+                setBusy(true);
+                const ok = await onLogin(pw);
+                setBusy(false);
+                if (!ok) setErr(true);
               }}
             >
               <label className="block">
@@ -290,14 +294,14 @@ function Login({ onLogin, company }: { onLogin: (p: string) => boolean; company:
                   autoFocus
                 />
               </label>
-              {err && <div className="text-danger text-xs">Enter any password to continue.</div>}
-              <button type="submit" className="btn-primary w-full">
-                Sign in <ChevronRight size={16} />
+              {err && <div className="text-danger text-xs">Incorrect password.</div>}
+              <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
+                {busy ? "Signing in…" : "Sign in"} <ChevronRight size={16} />
               </button>
             </form>
             <div className="mt-5 flex items-center gap-2 data text-[11px] text-steel-dim">
               <ShieldCheck size={13} className="text-ok" />
-              Demo console — any password unlocks the dashboard.
+              Owner's console — enter the dashboard password.
             </div>
           </div>
           <Link to="/" className="mt-5 flex items-center justify-center gap-1.5 py-2.5 text-sm text-steel hover:text-cream">
