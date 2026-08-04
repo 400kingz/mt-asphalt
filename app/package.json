@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "server": "node server/index.js"
+    "server": "node server/index.js",
+    "verify": "esbuild src/lib/assistant.test.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/verify.mjs --log-level=error && node node_modules/.cache/verify.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^0.27.0",

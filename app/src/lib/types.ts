@@ -43,6 +43,23 @@ export interface Settings {
   materialMarkupPct: number;
   defaultPaymentTerms: string;
   warrantyText: string;
+  /* Paving rate sheet — drives every calculated quote.
+     Optional so a database saved before these existed still loads;
+     see DEFAULT_RATES in lib/pricing.ts for the fallbacks. */
+  asphaltCostPerTon?: number;
+  asphaltDensityLbPerCuFt?: number;
+  installLaborPerSqft?: number;
+  mobilizationFee?: number;
+  minJobCharge?: number;
+  sealcoatPerSqft?: number;
+  crackFillPerLinearFt?: number;
+  patchingPerSqft?: number;
+  millingPerSqft?: number;
+  basePrepPerSqft?: number;
+  stripingPerStall?: number;
+  markupPct?: number;
+  taxRatePct?: number;
+  depositPct?: number;
   // brand
   brandPrimary: string;
   brandAccent: string;

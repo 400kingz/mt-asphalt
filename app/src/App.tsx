@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import PublicSite from "./public/PublicSite";
 import AdminLayout from "./admin/AdminLayout";
 import Overview from "./admin/pages/Overview";
+import Assistant from "./admin/pages/Assistant";
 import Leads from "./admin/pages/Leads";
 import Jobs from "./admin/pages/Jobs";
 import Schedule from "./admin/pages/Schedule";
@@ -22,6 +23,7 @@ export default function App() {
       <Route path="/" element={<PublicSite />} />
       <Route path="/dashboard" element={<AdminLayout />}>
         <Route index element={<Overview />} />
+        <Route path="assistant" element={<Assistant />} />
         <Route path="leads" element={<Leads />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="schedule" element={<Schedule />} />

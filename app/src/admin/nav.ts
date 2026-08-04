@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Globe,
   Settings,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ export interface NavItem {
 
 export const NAV: NavItem[] = [
   { to: "/dashboard", label: "Command Center", icon: LayoutDashboard, group: "Operate", primary: true },
+  { to: "/dashboard/assistant", label: "Assistant", icon: Sparkles, group: "Operate", primary: true },
   { to: "/dashboard/leads", label: "Leads", icon: Inbox, group: "Operate", primary: true },
   { to: "/dashboard/jobs", label: "Jobs", icon: Construction, group: "Operate", primary: true },
   { to: "/dashboard/schedule", label: "Schedule", icon: CalendarDays, group: "Operate", primary: true },
