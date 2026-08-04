@@ -1,21 +1,20 @@
 // MT Asphalt — server-side auth helpers for Vercel Functions.
-// Shared by api/auth.js and api/change-password.js.
+// Shared by api/auth.js, api/data.js and api/change-password.js.
 
-import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { randomBytes, scryptSync, timingSafeEqual, createHmac } from "crypto";
 import { put, list } from "@vercel/blob";
 
 export const PASSWORD_KEY = "auth/dashboard-password.json";
-export const SESSIONS_KEY = "auth/sessions.json";
 
 const DEFAULT_SEED_PASSWORD = "CHANGEME";
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 // This SDK build only supports access: "public" (private throws). The blob
 // store's hostname is never sent to the browser — these functions always
 // proxy parsed content back to the client, never the blob URL itself — so an
 // outside caller would need the exact (random, per-project) store hostname
 // plus this exact key to reach it directly. That's a secondary layer; the
-// real access control is the session-token check in api/data.js and the
-// password/token checks below.
+// real access control is the password/token checks below.
 async function readBlobJson(key) {
   const { blobs } = await list({ prefix: key, limit: 1 });
   if (!blobs || blobs.length === 0) return null;
@@ -101,47 +100,54 @@ export async function ensurePasswordRecord() {
   return record;
 }
 
-/**
- * Load the active session list from Vercel Blob.
- */
-async function getSessions() {
-  try {
-    const data = await readBlobJson(SESSIONS_KEY);
-    if (!data || !Array.isArray(data.tokens)) return { tokens: [] };
-    return data;
-  } catch {
-    return { tokens: [] };
-  }
+// Session tokens are stateless (self-verifying HMAC + expiry), not looked up
+// in storage on every request. An earlier version stored active tokens as a
+// JSON blob and re-read it on every /api/data call, but Vercel Blob's public
+// CDN read-after-write consistency lag meant a token issued by /api/auth
+// could still fail verification in /api/data seconds later, in production
+// (confirmed via prod logs — a freshly-issued token verified fine locally but
+// 401'd from the deployed function). A signed token needs no storage read to
+// verify, so there's nothing to be stale.
+function sessionSecret() {
+  // Local dev without the env var still works, with a fixed (not secret)
+  // key — fine since nothing sensitive is at stake outside production, and
+  // production has SESSION_SECRET set via Vercel env vars.
+  return process.env.SESSION_SECRET || "local-dev-only-not-secret";
+}
+
+function sign(payload) {
+  return createHmac("sha256", sessionSecret()).update(payload).digest("hex");
 }
 
 /**
- * Persist the session list to Vercel Blob.
+ * Issue a new signed session token, valid for SESSION_TTL_MS.
  */
-async function setSessions(data) {
-  await put(SESSIONS_KEY, JSON.stringify(data), {
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-  });
+export function issueToken() {
+  const expires = Date.now() + SESSION_TTL_MS;
+  const nonce = randomBytes(16).toString("hex");
+  const payload = `${expires}.${nonce}`;
+  return `${payload}.${sign(payload)}`;
 }
 
 /**
- * Store a newly issued session token so it can be validated later.
- */
-export async function addSession(token) {
-  const sessions = await getSessions();
-  // Keep the list bounded: drop the oldest sessions when it grows too large.
-  const tokens = sessions.tokens.slice(-99);
-  tokens.push({ token, createdAt: new Date().toISOString() });
-  await setSessions({ tokens });
-  return token;
-}
-
-/**
- * Check whether a token is currently in the active session list.
+ * Check whether a token is well-formed, correctly signed, and unexpired.
  */
 export async function isTokenValid(token) {
-  const sessions = await getSessions();
-  return sessions.tokens.some((t) => t && t.token === token);
+  if (typeof token !== "string") return false;
+  const parts = token.split(".");
+  if (parts.length !== 3) return false;
+  const [expiresStr, nonce, sig] = parts;
+  const expires = Number(expiresStr);
+  if (!Number.isFinite(expires) || Date.now() > expires) return false;
+
+  const expected = sign(`${expiresStr}.${nonce}`);
+  let actual;
+  try {
+    actual = Buffer.from(sig, "hex");
+  } catch {
+    return false;
+  }
+  const expectedBuf = Buffer.from(expected, "hex");
+  if (actual.length !== expectedBuf.length) return false;
+  return timingSafeEqual(actual, expectedBuf);
 }

@@ -11,15 +11,11 @@
 // literal default "CHANGEME" if the env var is missing), then stored in Blob.
 // After that the env var is only a convenient way to set the initial password;
 // changes are made from Settings → Change Password.
+//
+// Session tokens are signed (HMAC + expiry) via issueToken(), not looked up in
+// storage — see the comment above issueToken() in _auth-helpers.js for why.
 
-import { randomBytes } from "crypto";
-import { ensurePasswordRecord, verifyPassword, addSession } from "./_auth-helpers.js";
-
-const TOKEN_BYTES = 48;
-
-function makeToken() {
-  return randomBytes(TOKEN_BYTES).toString("hex");
-}
+import { ensurePasswordRecord, verifyPassword, issueToken } from "./_auth-helpers.js";
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
@@ -39,9 +35,7 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "invalid password" });
     }
 
-    const token = makeToken();
-    await addSession(token);
-    return res.status(200).json({ token });
+    return res.status(200).json({ token: issueToken() });
   } catch (err) {
     // Most common cause: Blob store not connected yet (missing BLOB_READ_WRITE_TOKEN)
     // eslint-disable-next-line no-console
