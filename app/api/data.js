@@ -11,8 +11,10 @@
 // would hand the entire customer database to anyone (or anything) that requests
 // it, including every visitor's browser if this were ever called from the public
 // site. Callers must send `Authorization: Bearer <token>` from a token issued by
-// POST /api/auth. The blob itself is stored with private access as a second layer.
-import { put, get } from "@vercel/blob";
+// POST /api/auth. (This SDK build only supports access: "public" for blobs —
+// there is no private mode here — so the session-token check below is the real
+// access control, not the blob's own obscurity.)
+import { put, list } from "@vercel/blob";
 import { isTokenValid } from "./_auth-helpers.js";
 
 const BLOB_KEY = "data/dashboard-v1.json";
@@ -33,9 +35,11 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
-      const blob = await get(BLOB_KEY, { access: "private", useCache: false });
-      if (!blob) return res.status(200).json(null);
-      return res.status(200).json(await blob.json());
+      const { blobs } = await list({ prefix: BLOB_KEY, limit: 1 });
+      if (!blobs || blobs.length === 0) return res.status(200).json(null);
+      const r = await fetch(`${blobs[0].url}?t=${Date.now()}`); // bust edge cache
+      if (!r.ok) throw new Error(`blob fetch failed: ${r.status}`);
+      return res.status(200).json(await r.json());
     }
 
     if (req.method === "PUT") {
@@ -45,7 +49,7 @@ export default async function handler(req, res) {
       }
 
       await put(BLOB_KEY, JSON.stringify(body), {
-        access: "private",
+        access: "public",
         addRandomSuffix: false,
         allowOverwrite: true,
         contentType: "application/json",

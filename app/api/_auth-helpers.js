@@ -2,12 +2,27 @@
 // Shared by api/auth.js and api/change-password.js.
 
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
-import { get, put } from "@vercel/blob";
+import { put, list } from "@vercel/blob";
 
 export const PASSWORD_KEY = "auth/dashboard-password.json";
 export const SESSIONS_KEY = "auth/sessions.json";
 
 const DEFAULT_SEED_PASSWORD = "CHANGEME";
+
+// This SDK build only supports access: "public" (private throws). The blob
+// store's hostname is never sent to the browser — these functions always
+// proxy parsed content back to the client, never the blob URL itself — so an
+// outside caller would need the exact (random, per-project) store hostname
+// plus this exact key to reach it directly. That's a secondary layer; the
+// real access control is the session-token check in api/data.js and the
+// password/token checks below.
+async function readBlobJson(key) {
+  const { blobs } = await list({ prefix: key, limit: 1 });
+  if (!blobs || blobs.length === 0) return null;
+  const res = await fetch(`${blobs[0].url}?t=${Date.now()}`); // bust edge cache
+  if (!res.ok) return null;
+  return res.json();
+}
 
 /**
  * Hash a plain-text password with a fresh random salt.
@@ -44,9 +59,7 @@ export function verifyPassword(password, record) {
  */
 export async function getPasswordRecord() {
   try {
-    const blob = await get(PASSWORD_KEY, { access: "private", useCache: false });
-    if (!blob) return null;
-    return await blob.json();
+    return await readBlobJson(PASSWORD_KEY);
   } catch {
     return null;
   }
@@ -57,7 +70,7 @@ export async function getPasswordRecord() {
  */
 export async function setPasswordRecord(record) {
   await put(PASSWORD_KEY, JSON.stringify(record), {
-    access: "private",
+    access: "public",
     addRandomSuffix: false,
     allowOverwrite: true,
     contentType: "application/json",
@@ -93,9 +106,7 @@ export async function ensurePasswordRecord() {
  */
 async function getSessions() {
   try {
-    const blob = await get(SESSIONS_KEY, { access: "private", useCache: false });
-    if (!blob) return { tokens: [] };
-    const data = await blob.json();
+    const data = await readBlobJson(SESSIONS_KEY);
     if (!data || !Array.isArray(data.tokens)) return { tokens: [] };
     return data;
   } catch {
@@ -108,7 +119,7 @@ async function getSessions() {
  */
 async function setSessions(data) {
   await put(SESSIONS_KEY, JSON.stringify(data), {
-    access: "private",
+    access: "public",
     addRandomSuffix: false,
     allowOverwrite: true,
     contentType: "application/json",
