@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Building2, Phone, ShieldCheck, DollarSign, MapPin, RotateCcw, X, Plus, Lock } from "lucide-react";
+import { Building2, Phone, ShieldCheck, DollarSign, MapPin, RotateCcw, Trash2, X, Plus, AlertTriangle, Lock } from "lucide-react";
 import { useStore, AUTH_KEY } from "../../lib/store";
 
 export default function SettingsPage() {
-  const { db, updateSettings, resetAll } = useStore();
+  const { db, updateSettings, resetAll, clearDemoData, hasDemoData } = useStore();
   const s = db.settings;
   const [cityInput, setCityInput] = useState("");
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearTyped, setClearTyped] = useState("");
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -87,6 +89,61 @@ export default function SettingsPage() {
         ) : (
           <button onClick={() => setConfirmReset(true)} className="btn-ghost text-sm mt-3 border-danger/40 text-danger"><RotateCcw size={15} /> Reset to defaults</button>
         )}
+      </div>
+
+      {/* Clear demo data */}
+      <div className="card p-5 border-danger/30">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 text-danger"><AlertTriangle size={18} /></div>
+          <div className="flex-1">
+            <h3 className="display text-lg text-cream">Clear demo data</h3>
+            <p className="text-muted text-sm mt-1">
+              Permanently delete every seeded sample customer, job, invoice, contract, lead, crew member, equipment item, material, testimonial, service, and activity record.
+              Your company profile, rates, and other settings are left exactly as they are — this only removes fake records.
+            </p>
+            {!hasDemoData && (
+              <p className="text-ok text-sm mt-2">No demo data remains in this dashboard.</p>
+            )}
+            {confirmClear ? (
+              <div className="mt-4 space-y-3">
+                <label className="block">
+                  <span className="field-label">Type <strong>CLEAR DEMO DATA</strong> to confirm</span>
+                  <input
+                    className="input"
+                    value={clearTyped}
+                    onChange={(e) => setClearTyped(e.target.value)}
+                    placeholder="CLEAR DEMO DATA"
+                    autoFocus
+                  />
+                </label>
+                <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                  <button
+                    onClick={() => { clearDemoData(); setConfirmClear(false); setClearTyped(""); }}
+                    disabled={clearTyped !== "CLEAR DEMO DATA"}
+                    className="btn-primary text-sm whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: "#ef4d4d", boxShadow: "0 6px 0 -1px #b91c1c" }}
+                  >
+                    <Trash2 size={15} /> Yes, clear all demo data
+                  </button>
+                  <button
+                    onClick={() => { setConfirmClear(false); setClearTyped(""); }}
+                    className="btn-ghost text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmClear(true)}
+                disabled={!hasDemoData}
+                className="btn-ghost text-sm mt-3 border-danger/40 text-danger disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Trash2 size={15} /> Clear demo data
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

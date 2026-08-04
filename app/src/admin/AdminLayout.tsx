@@ -11,17 +11,36 @@ import {
   ArrowUpRight,
   Lock,
   ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { useStore, useAuth } from "../lib/store";
 import { LogoMark, Wordmark } from "../components/Logo";
 import { NAV, NAV_GROUPS } from "./nav";
 
+const DEMO_BANNER_KEY = "mt-asphalt-demo-banner-dismissed-v1";
+
 export default function AdminLayout() {
   const { authed, login, logout } = useAuth();
-  const { db } = useStore();
+  const { db, hasDemoData } = useStore();
   const loc = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(DEMO_BANNER_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const dismissBanner = () => {
+    try {
+      localStorage.setItem(DEMO_BANNER_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    setBannerDismissed(true);
+  };
 
   if (!authed) return <Login onLogin={login} company={db.settings.companyName} />;
 
@@ -140,6 +159,37 @@ export default function AdminLayout() {
                 className="bg-transparent outline-none text-sm text-cream w-full placeholder:text-steel-dim"
                 autoFocus
               />
+            </div>
+          </div>
+        )}
+
+        {/* Demo data banner */}
+        {hasDemoData && !bannerDismissed && (
+          <div className="px-4 lg:px-6 pt-4">
+            <div className="card p-4 border-highway/40 bg-highway/10">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 text-highway shrink-0">
+                  <AlertTriangle size={18} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="display text-sm text-cream">This dashboard contains sample demo data</h4>
+                  <p className="text-muted text-sm mt-1">
+                    Customers like "Robert Maddox" and jobs like "Harbor Plaza" are fictional examples.
+                    Before you enter real customers or send invoices, go to{" "}
+                    <Link to="/dashboard/settings" className="text-highway hover:underline">
+                      Settings
+                    </Link>{" "}
+                    and choose <strong>Clear demo data</strong> to start clean.
+                  </p>
+                </div>
+                <button
+                  onClick={dismissBanner}
+                  className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/10 shrink-0"
+                  aria-label="Dismiss demo data notice"
+                >
+                  <X size={16} className="text-muted" />
+                </button>
+              </div>
             </div>
           </div>
         )}

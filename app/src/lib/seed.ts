@@ -17,6 +17,39 @@ const d = (iso: string) => {
   return time ? `${shifted}T${time}` : shifted;
 };
 
+/** IDs that originated from the seed data. Used to strip demo records. */
+export const seededIds = {
+  services: new Set<string>(["svc-1", "svc-2", "svc-3", "svc-4", "svc-5", "svc-6", "svc-7"]),
+  testimonials: new Set<string>(["t-1", "t-2", "t-3", "t-4", "t-5"]),
+  customers: new Set<string>(["c-1", "c-2", "c-3", "c-4", "c-5", "c-6", "c-7", "c-8", "c-9", "c-10"]),
+  jobs: new Set<string>(["j-1", "j-2", "j-3", "j-4", "j-5", "j-6", "j-7", "j-8", "j-9", "j-10", "j-11", "j-12"]),
+  leads: new Set<string>(["l-1", "l-2", "l-3", "l-4", "l-5", "l-6", "l-7"]),
+  invoices: new Set<string>(["inv-1", "inv-2", "inv-3", "inv-4", "inv-5", "inv-6", "inv-7"]),
+  contracts: new Set<string>(["con-1", "con-2", "con-3", "con-4"]),
+  crew: new Set<string>(["cr-1", "cr-2", "cr-3", "cr-4", "cr-5", "cr-6"]),
+  equipment: new Set<string>(["eq-1", "eq-2", "eq-3", "eq-4", "eq-5", "eq-6", "eq-7", "eq-8"]),
+  materials: new Set<string>(["m-1", "m-2", "m-3", "m-4", "m-5", "m-6", "m-7"]),
+  activity: new Set<string>(["a-1", "a-2", "a-3", "a-4", "a-5", "a-6", "a-7", "a-8", "a-9", "a-10"]),
+};
+
+/** Returns true if the database still contains any seed-derived records. */
+export function hasDemoData(db: Database): boolean {
+  return (
+    db.services.some((x) => seededIds.services.has(x.id)) ||
+    db.testimonials.some((x) => seededIds.testimonials.has(x.id)) ||
+    db.customers.some((x) => seededIds.customers.has(x.id)) ||
+    db.jobs.some((x) => seededIds.jobs.has(x.id)) ||
+    db.leads.some((x) => seededIds.leads.has(x.id)) ||
+    db.invoices.some((x) => seededIds.invoices.has(x.id)) ||
+    db.contracts.some((x) => seededIds.contracts.has(x.id)) ||
+    db.crew.some((x) => seededIds.crew.has(x.id)) ||
+    db.equipment.some((x) => seededIds.equipment.has(x.id)) ||
+    db.materials.some((x) => seededIds.materials.has(x.id)) ||
+    db.activity.some((x) => seededIds.activity.has(x.id)) ||
+    db.revenue.length > 0
+  );
+}
+
 export const seed: Database = {
   settings: {
     companyName: "MT Asphalt",
