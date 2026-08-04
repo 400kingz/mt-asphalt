@@ -12,7 +12,7 @@ import type {
   Material,
   Equipment,
 } from "./types";
-import { seed } from "./seed";
+import { seed, seededIds, hasDemoData } from "./seed";
 
 /* ============================================================
    Store — the app's data tier.
@@ -65,6 +65,8 @@ interface StoreApi {
   updateMaterial: (id: string, patch: Partial<Material>) => void;
   updateEquipment: (id: string, patch: Partial<Equipment>) => void;
   resetAll: () => void;
+  clearDemoData: () => void;
+  hasDemoData: boolean;
 }
 
 const StoreCtx = createContext<StoreApi | null>(null);
@@ -207,6 +209,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setDb((d) => ({ ...d, equipment: patchIn(d.equipment, id, patch) })),
 
       resetAll: () => setDb(structuredClone(seed)),
+
+      // Company profile in Settings (name, license #836341, phone, address,
+      // verified review stats, brand colors) is Michael's real, already-
+      // verified business info, not demo data — this only strips the fake
+      // seeded records (customers, jobs, invoices, ...). Settings is left
+      // untouched, including the placeholder rate fields, which the user
+      // chose to launch with (clearly labeled) rather than blank out.
+      clearDemoData: () =>
+        setDb((d) => ({
+          ...d,
+          services: d.services.filter((x) => !seededIds.services.has(x.id)),
+          testimonials: d.testimonials.filter((x) => !seededIds.testimonials.has(x.id)),
+          leads: d.leads.filter((x) => !seededIds.leads.has(x.id)),
+          customers: d.customers.filter((x) => !seededIds.customers.has(x.id)),
+          jobs: d.jobs.filter((x) => !seededIds.jobs.has(x.id)),
+          invoices: d.invoices.filter((x) => !seededIds.invoices.has(x.id)),
+          contracts: d.contracts.filter((x) => !seededIds.contracts.has(x.id)),
+          crew: d.crew.filter((x) => !seededIds.crew.has(x.id)),
+          equipment: d.equipment.filter((x) => !seededIds.equipment.has(x.id)),
+          materials: d.materials.filter((x) => !seededIds.materials.has(x.id)),
+          activity: d.activity.filter((x) => !seededIds.activity.has(x.id)),
+          revenue: [],
+        })),
+
+      hasDemoData: hasDemoData(db),
     };
   }, [db]);
 
