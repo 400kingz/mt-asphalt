@@ -17,10 +17,14 @@ const d = (iso: string) => {
   return time ? `${shifted}T${time}` : shifted;
 };
 
-/** IDs that originated from the seed data. Used to strip demo records. */
+/**
+ * IDs that originated from the seed data. Used to strip demo records.
+ * Deliberately excludes services and testimonials — those are real company
+ * content (the actual service list, real curated reviews from the research
+ * dossier), not invented placeholder records like the customers/jobs below.
+ * Clearing demo data must not empty out the live site's content.
+ */
 export const seededIds = {
-  services: new Set<string>(["svc-1", "svc-2", "svc-3", "svc-4", "svc-5", "svc-6", "svc-7"]),
-  testimonials: new Set<string>(["t-1", "t-2", "t-3", "t-4", "t-5"]),
   customers: new Set<string>(["c-1", "c-2", "c-3", "c-4", "c-5", "c-6", "c-7", "c-8", "c-9", "c-10"]),
   jobs: new Set<string>(["j-1", "j-2", "j-3", "j-4", "j-5", "j-6", "j-7", "j-8", "j-9", "j-10", "j-11", "j-12"]),
   leads: new Set<string>(["l-1", "l-2", "l-3", "l-4", "l-5", "l-6", "l-7"]),
@@ -35,8 +39,6 @@ export const seededIds = {
 /** Returns true if the database still contains any seed-derived records. */
 export function hasDemoData(db: Database): boolean {
   return (
-    db.services.some((x) => seededIds.services.has(x.id)) ||
-    db.testimonials.some((x) => seededIds.testimonials.has(x.id)) ||
     db.customers.some((x) => seededIds.customers.has(x.id)) ||
     db.jobs.some((x) => seededIds.jobs.has(x.id)) ||
     db.leads.some((x) => seededIds.leads.has(x.id)) ||

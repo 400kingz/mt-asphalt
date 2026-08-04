@@ -98,8 +98,8 @@ export default function SettingsPage() {
           <div className="flex-1">
             <h3 className="display text-lg text-cream">Clear demo data</h3>
             <p className="text-muted text-sm mt-1">
-              Permanently delete every seeded sample customer, job, invoice, contract, lead, crew member, equipment item, material, testimonial, service, and activity record.
-              Your company profile, rates, and other settings are left exactly as they are — this only removes fake records.
+              Permanently delete every seeded sample customer, job, invoice, contract, lead, crew member, equipment item, material, and activity record.
+              Your company profile, rates, real services, testimonials, and other settings are left exactly as they are — this only removes fake records.
             </p>
             {!hasDemoData && (
               <p className="text-ok text-sm mt-2">No demo data remains in this dashboard.</p>

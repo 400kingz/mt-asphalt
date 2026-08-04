@@ -138,35 +138,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Pull the serverless lead inbox and merge any leads this browser hasn't seen.
-      try {
-        const res = await fetch("/api/leads", { headers: { accept: "application/json" } });
-        if (!res.ok || !res.headers.get("content-type")?.includes("json")) return;
-        const remote = (await res.json()) as Partial<Lead>[];
-        if (!Array.isArray(remote) || remote.length === 0) return;
-        const known = new Set(nextDb.leads.map((l) => l.id));
-        const fresh: Lead[] = remote
-          .filter((l) => l && typeof l.id === "string" && !known.has(l.id))
-          .map((l) => ({
-            id: l.id!,
-            name: l.name ?? "Unknown",
-            phone: l.phone ?? "",
-            email: l.email ?? "",
-            address: l.address ?? "",
-            city: l.city ?? "",
-            serviceInterest: l.serviceInterest ?? "General inquiry",
-            message: l.message ?? "",
-            status: l.status ?? "new",
-            source: l.source ?? "website",
-            createdAt: l.createdAt ?? new Date().toISOString(),
-            estSqft: l.estSqft,
-            value: l.value,
-          }));
-        if (fresh.length > 0) {
-          nextDb = { ...nextDb, leads: [...fresh, ...nextDb.leads] };
+      // A bare `return` here must only skip the merge, not the outer hydrate
+      // function — it used to abort the whole hydrate (including the
+      // setDb(nextDb) below) whenever there were simply no new leads to
+      // merge, which is the common case. That silently discarded whatever
+      // /api/data had just returned (e.g. after Clear Demo Data) and left
+      // the dashboard showing stale local/seed data indefinitely.
+      nextDb = await (async () => {
+        try {
+          const res = await fetch("/api/leads", { headers: { accept: "application/json" } });
+          if (!res.ok || !res.headers.get("content-type")?.includes("json")) return nextDb;
+          const remote = (await res.json()) as Partial<Lead>[];
+          if (!Array.isArray(remote) || remote.length === 0) return nextDb;
+          const known = new Set(nextDb.leads.map((l) => l.id));
+          const fresh: Lead[] = remote
+            .filter((l) => l && typeof l.id === "string" && !known.has(l.id))
+            .map((l) => ({
+              id: l.id!,
+              name: l.name ?? "Unknown",
+              phone: l.phone ?? "",
+              email: l.email ?? "",
+              address: l.address ?? "",
+              city: l.city ?? "",
+              serviceInterest: l.serviceInterest ?? "General inquiry",
+              message: l.message ?? "",
+              status: l.status ?? "new",
+              source: l.source ?? "website",
+              createdAt: l.createdAt ?? new Date().toISOString(),
+              estSqft: l.estSqft,
+              value: l.value,
+            }));
+          return fresh.length > 0 ? { ...nextDb, leads: [...fresh, ...nextDb.leads] } : nextDb;
+        } catch {
+          /* local dev or offline — dashboard still works from local data */
+          return nextDb;
         }
-      } catch {
-        /* local dev or offline — dashboard still works from local data */
-      }
+      })();
 
       if (!cancelled) setDb(nextDb);
       hydrated.current = true;
@@ -251,8 +258,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       clearDemoData: () =>
         setDb((d) => ({
           ...d,
-          services: d.services.filter((x) => !seededIds.services.has(x.id)),
-          testimonials: d.testimonials.filter((x) => !seededIds.testimonials.has(x.id)),
           leads: d.leads.filter((x) => !seededIds.leads.has(x.id)),
           customers: d.customers.filter((x) => !seededIds.customers.has(x.id)),
           jobs: d.jobs.filter((x) => !seededIds.jobs.has(x.id)),
