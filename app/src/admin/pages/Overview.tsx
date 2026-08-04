@@ -35,9 +35,12 @@ export default function Overview() {
   const { db } = useStore();
   const { jobs, leads, invoices, materials, equipment, crew, revenue, activity, settings } = db;
 
+  // A brand-new business (or right after Clear Demo Data) has no revenue
+  // history yet — jul/jun used to be assumed present, which crashed the
+  // whole dashboard the moment revenue was empty.
   const jul = revenue[revenue.length - 1];
   const jun = revenue[revenue.length - 2];
-  const revChange = (((jul.revenue - jun.revenue) / jun.revenue) * 100).toFixed(0);
+  const revChange = jul && jun && jun.revenue !== 0 ? (((jul.revenue - jun.revenue) / jun.revenue) * 100).toFixed(0) : null;
 
   const newLeads = leads.filter((l) => l.status === "new");
   const pipeline = jobs
@@ -100,10 +103,10 @@ export default function Overview() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatTile
           label="Revenue — July"
-          value={compactMoney(jul.revenue)}
+          value={compactMoney(jul?.revenue ?? 0)}
           accent="#4ec27a"
           icon={<TrendingUp size={18} />}
-          trend={{ dir: Number(revChange) >= 0 ? "up" : "down", text: `${Math.abs(Number(revChange))}% vs Jun` }}
+          trend={revChange !== null ? { dir: Number(revChange) >= 0 ? "up" : "down", text: `${Math.abs(Number(revChange))}% vs Jun` } : undefined}
           sub="month to date"
         />
         <StatTile
