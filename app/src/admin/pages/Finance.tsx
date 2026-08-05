@@ -25,12 +25,16 @@ export default function Finance() {
   const ytd = revenue.reduce((s, r) => s + r.revenue, 0);
   const ytdExp = revenue.reduce((s, r) => s + r.expenses, 0);
   const profit = ytd - ytdExp;
-  const marginPct = Math.round((profit / ytd) * 100);
-  const avgJob = Math.round(jobs.reduce((s, j) => s + j.value, 0) / jobs.length);
+  // A brand-new business (or right after Clear Demo Data) has no revenue or
+  // jobs yet — these used to divide straight into NaN with nothing to guard
+  // against a zero denominator.
+  const marginPct = ytd !== 0 ? Math.round((profit / ytd) * 100) : 0;
+  const avgJob = jobs.length > 0 ? Math.round(jobs.reduce((s, j) => s + j.value, 0) / jobs.length) : 0;
 
   // revenue by service (from jobs)
   const byService: Record<string, number> = {};
   jobs.forEach((j) => {
+    if (j.serviceTypes.length === 0) return;
     const share = j.value / j.serviceTypes.length;
     j.serviceTypes.forEach((t) => (byService[t] = (byService[t] ?? 0) + share));
   });
