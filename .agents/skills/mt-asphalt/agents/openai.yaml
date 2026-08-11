@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mt Asphalt"
+  short_description: "Repo-specific patterns and workflows for mt-asphalt"
+  default_prompt: "Use the mt-asphalt repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
