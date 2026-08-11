@@ -20,7 +20,9 @@ npm run dev
 Open **http://localhost:5173**
 
 - Public site: `/`
-- Dashboard: `/dashboard` — sign in with **any password** (demo gate; see note below).
+- Dashboard: `/dashboard` — sign in with an approved Google account (see **Auth** below). Under
+  plain `vite` dev (no `vercel dev`), a **"Continue without Google (dev mode)"** button appears
+  instead, so UI work doesn't require a configured Google OAuth client.
 
 ### Full-stack mode (optional)
 
@@ -82,11 +84,17 @@ gallery · stylized Orange County service-area map · owner story · reviews · 
 centerline striping** as the signature structural device, `Anton` highway-sign display type, and
 `Space Mono` gauge-style data readouts. Palette derived from the official MT Asphalt logo.
 
+### Auth
+The dashboard is gated by Google OAuth, not a shared password. `api/auth/google-login.js` starts
+the flow, `api/auth/google-callback.js` exchanges the code, checks the signed-in Google account's
+email against an allowlist (`isAdminEmail` in `api/_auth-helpers.js` — Michael's address is
+built in; more can be added via `ADMIN_EMAILS`), and issues a signed session token if approved.
+`src/lib/store.tsx`'s `useAuth` hook drives the redirect and picks the token back up from the URL
+fragment. See **MICHAEL_GUIDE.md** for the Google Cloud Console setup steps.
+
 ---
 
 ## Notes
-- **Auth is a demo gate** — any non-empty password unlocks the dashboard. Before going live,
-  wire `useAuth` in `src/lib/store.tsx` to a real password hash / session on the backend.
 - Gallery images and job photos are placeholders; Michael uploads real before/after shots via
   the Website CMS once photos are supplied.
 - All company facts, colors, testimonials, and license details come from the research dossier in

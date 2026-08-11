@@ -25,8 +25,38 @@ npm run dev
 Then open the address it shows (usually `http://localhost:5173`).
 
 - Your website is the front page.
-- Your dashboard is at `/dashboard`. For now, **type any password** to get in. (Before it goes
-  public, we'll lock this to a real password only you know.)
+- Your dashboard is at `/dashboard`. You sign in with **your Google account** — no password to
+  remember or lose. Only Google accounts you've approved can get in; see **Signing in** below
+  for how that's set up.
+
+---
+
+## Signing in (one-time setup for whoever deploys this)
+
+The dashboard uses **Sign in with Google** instead of a password — nothing for Michael to
+remember, and it's locked to specific approved Google accounts, so a stranger who finds the URL
+can't get in even if they guess it.
+
+To turn it on, the person deploying the site needs to do this once:
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com/), create (or pick) a
+   project, then **APIs & Services → OAuth consent screen** — fill in the app name ("MT Asphalt
+   Dashboard") and Michael's email as the support contact.
+2. **APIs & Services → Credentials → Create Credentials → OAuth client ID**, type **Web
+   application**. Under **Authorized redirect URIs**, add:
+   - `https://<the-live-domain>/api/auth/google-callback`
+   - `http://localhost:3000/api/auth/google-callback` (only needed for local testing)
+3. Copy the **Client ID** and **Client secret** it gives you.
+4. In Vercel → the project → **Settings → Environment Variables**, add:
+   - `GOOGLE_CLIENT_ID` — the client ID from step 3
+   - `GOOGLE_CLIENT_SECRET` — the client secret from step 3
+   - `SESSION_SECRET` — any long random string (generates the login sessions)
+5. Redeploy. Michael's own address (`mtasphalt72@gmail.com`) is already approved by default. To
+   approve anyone else, add an `ADMIN_EMAILS` environment variable with their address (comma-
+   separated if more than one) and redeploy.
+
+Once that's done, Michael (and anyone else approved) just clicks **Sign in with Google** on
+`/dashboard` and picks their account.
 
 ---
 

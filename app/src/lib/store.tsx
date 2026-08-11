@@ -138,6 +138,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Pull the serverless lead inbox and merge any leads this browser hasn't seen.
+      // Requires the same session token as /api/data — a lead carries a
+      // customer's contact details, so a logged-out visitor (e.g. the public
+      // marketing site, which also mounts StoreProvider) gets 401 here and
+      // simply skips the merge below.
+      //
       // A bare `return` here must only skip the merge, not the outer hydrate
       // function — it used to abort the whole hydrate (including the
       // setDb(nextDb) below) whenever there were simply no new leads to
@@ -146,7 +151,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // the dashboard showing stale local/seed data indefinitely.
       nextDb = await (async () => {
         try {
-          const res = await fetch("/api/leads", { headers: { accept: "application/json" } });
+          const res = await fetch("/api/leads", { headers: { ...authHeaders(), accept: "application/json" } });
           if (!res.ok || !res.headers.get("content-type")?.includes("json")) return nextDb;
           const remote = (await res.json()) as Partial<Lead>[];
           if (!Array.isArray(remote) || remote.length === 0) return nextDb;
@@ -283,7 +288,7 @@ export function useStore() {
   return ctx;
 }
 
-/* ---- lightweight auth (server-verified, single-owner) ---- */
+/* ---- lightweight auth (Google OAuth, server-verified admin allowlist) ---- */
 export function useAuth() {
   const [authed, setAuthed] = useState<boolean>(() => {
     try {
@@ -292,45 +297,71 @@ export function useAuth() {
       return false;
     }
   });
+  const [adminEmail, setAdminEmail] = useState<string | null>(null);
 
-  const login = async (password: string): Promise<boolean> => {
-    const trimmed = password.trim();
-    if (trimmed.length === 0) return false;
-
+  // Pick up the session token api/auth/google-callback.js hands back in the
+  // URL fragment (/dashboard#auth=<token>) after a successful sign-in.
+  // Fragments never reach the server, so this is the one safe place to move
+  // the token into sessionStorage — then the URL is cleaned up so a refresh
+  // or share of the link doesn't carry it around.
+  useEffect(() => {
+    const match = /(?:^#|[#&])auth=([^&]+)/.exec(window.location.hash);
+    if (!match) return;
     try {
-      const res = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: trimmed }),
-      });
-
-      if (res.ok) {
-        const data = (await res.json()) as { token?: string };
-        if (data.token) {
-          sessionStorage.setItem(AUTH_KEY, data.token);
-          setAuthed(true);
-          return true;
-        }
-      }
-
-      // The server is reachable and explicitly rejected the password (or
-      // returned something unexpected) — never treat that as success.
-      if (!import.meta.env.DEV) return false;
-
-      // Missing /api routes are expected under plain `vite` dev (the Vercel
-      // functions aren't served there) — fall back so local dev isn't
-      // blocked. This branch is compiled out of production builds.
-      // eslint-disable-next-line no-console
-      console.warn("[mt-asphalt-auth] Auth endpoint unreachable; using dev fallback.");
+      sessionStorage.setItem(AUTH_KEY, decodeURIComponent(match[1]));
     } catch {
-      if (!import.meta.env.DEV) return false;
-      // eslint-disable-next-line no-console
-      console.warn("[mt-asphalt-auth] Auth endpoint unreachable; using dev fallback.");
+      /* ignore */
     }
-
-    sessionStorage.setItem(AUTH_KEY, "dev-fallback-token");
     setAuthed(true);
-    return true;
+    const url = window.location.pathname + window.location.search;
+    window.history.replaceState(null, "", url);
+  }, []);
+
+  // Resolve the signed-in admin's email for display (Settings, sidebar).
+  // Skipped for the dev-mode bypass token, which has no server-side session.
+  useEffect(() => {
+    if (!authed) {
+      setAdminEmail(null);
+      return;
+    }
+    let token: string | null = null;
+    try {
+      token = sessionStorage.getItem(AUTH_KEY);
+    } catch {
+      token = null;
+    }
+    if (!token || token === "dev-fallback-token") return;
+
+    let cancelled = false;
+    fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { email?: string } | null) => {
+        if (!cancelled) setAdminEmail(data?.email ?? null);
+      })
+      .catch(() => {
+        /* offline or backend down — leave adminEmail unset */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authed]);
+
+  // Hands off to Google's consent screen; api/auth/google-callback.js
+  // redirects back here with a session token (or an authError) once done.
+  const login = () => {
+    window.location.href = "/api/auth/google-login";
+  };
+
+  // Dev-only bypass so UI work doesn't require a real Google OAuth client
+  // to be configured locally. Compiled out of production builds via the
+  // import.meta.env.DEV check at the call site.
+  const loginDev = () => {
+    try {
+      sessionStorage.setItem(AUTH_KEY, "dev-fallback-token");
+    } catch {
+      /* ignore */
+    }
+    setAuthed(true);
   };
 
   const logout = () => {
@@ -338,5 +369,5 @@ export function useAuth() {
     setAuthed(false);
   };
 
-  return { authed, login, logout };
+  return { authed, adminEmail, login, loginDev, logout };
 }

@@ -3,12 +3,25 @@
 //   POST /api/leads  → store an estimate request (one blob per lead: no write races)
 //   GET  /api/leads  → newest-first list; the dashboard merges these on load
 //
+// GET requires the same dashboard session token as /api/data: a lead carries
+// a customer's name, phone, email, address and message, and POST is the only
+// method the public estimate form actually needs — an unauthenticated GET
+// here would hand every inquiry ever submitted to any visitor of the public
+// site (store.tsx fetches this on every app mount, dashboard or not).
+//
 // Email notification: set RESEND_API_KEY (+ optionally NOTIFY_EMAIL / NOTIFY_FROM)
 // in Vercel env vars and Michael gets an email for every new request. Without the
 // key it silently skips — safe to deploy before Resend is set up.
 import { put, list } from "@vercel/blob";
+import { isTokenValid } from "./_auth-helpers.js";
 
 const MAX = (s, n) => String(s ?? "").slice(0, n);
+
+function getBearerToken(req) {
+  const header = req.headers.authorization || "";
+  const match = /^Bearer\s+(.+)$/i.exec(header);
+  return match ? match[1].trim() : "";
+}
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
@@ -46,6 +59,10 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "GET") {
+      if (!isTokenValid(getBearerToken(req))) {
+        return res.status(401).json({ error: "authentication required" });
+      }
+
       const { blobs } = await list({ prefix: "leads/", limit: 200 });
       const leads = await Promise.all(
         blobs.map(async (blob) => {
