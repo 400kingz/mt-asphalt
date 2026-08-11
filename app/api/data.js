@@ -11,7 +11,8 @@
 // would hand the entire customer database to anyone (or anything) that requests
 // it, including every visitor's browser if this were ever called from the public
 // site. Callers must send `Authorization: Bearer <token>` from a token issued by
-// POST /api/auth. (This SDK build only supports access: "public" for blobs —
+// GET /api/auth/google-callback after a successful, allowlisted Google
+// sign-in. (This SDK build only supports access: "public" for blobs —
 // there is no private mode here — so the session-token check below is the real
 // access control, not the blob's own obscurity.)
 import { put, list } from "@vercel/blob";
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
   const token = getBearerToken(req);
-  if (!token || !(await isTokenValid(token))) {
+  if (!token || !isTokenValid(token)) {
     return res.status(401).json({ error: "authentication required" });
   }
 
